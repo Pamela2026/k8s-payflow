@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: payflow-db-migration
+  namespace: payflow
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: payflow-db-migration
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: db-migration
+        image: flyway/flyway:9.22.3
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: payflow-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: payflow-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: payflow-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: payflow-secrets
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: payflow-secrets
+              key: DB_PASSWORD
+        - name: FLYWAY_LOCATIONS
+          value: "filesystem:/migrations"
+        - name: FLYWAY_BASELINE_ON_MIGRATE
+          value: "true"
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          set -e
+          export FLYWAY_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+          export FLYWAY_USER="$DB_USER"
+          export FLYWAY_PASSWORD="$DB_PASSWORD"
+          flyway -connectRetries=60 migrate
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+        volumeMounts:
+        - name: db-migrations
+          mountPath: /migrations
+          readOnly: true
+      volumes:
+      - name: db-migrations
+        configMap:
+          name: payflow-db-migrations

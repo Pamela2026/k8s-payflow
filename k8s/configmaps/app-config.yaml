@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payflow-config
+  namespace: payflow
+data:
+  # Database configuration
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "payflow"
+  
+  # Redis configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # RabbitMQ configuration
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: "5672"
+  
+  # Service URLs for internal communication
+  AUTH_SERVICE_URL: "http://auth-service:3004"
+  WALLET_SERVICE_URL: "http://wallet-service:3001"
+  TRANSACTION_SERVICE_URL: "http://transaction-service:3002"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:3003"
+  API_GATEWAY_URL: "http://api-gateway:3000"
+  
+  # Application settings
+  NODE_ENV: "development"
+  LOG_LEVEL: "info"
+  JWT_EXPIRES_IN: "24h"

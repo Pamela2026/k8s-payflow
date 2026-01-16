@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: transaction-timeout-handler
+  namespace: payflow
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: transaction-timeout-handler
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: timeout-handler
+            image: postgres:15
+            env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: payflow-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: payflow-config
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: payflow-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: payflow-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: payflow-secrets
+                  key: DB_PASSWORD
+            command:
+            - /bin/sh
+            - -c
+            args:
+            - |
+              set -e
+              export PGPASSWORD="$DB_PASSWORD"
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -c "UPDATE transactions SET status='FAILED', error_message='Timed out', completed_at=NOW() WHERE status='PENDING' AND created_at < NOW() - INTERVAL '1 minute';"

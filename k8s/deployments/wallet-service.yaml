@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallet-service
+  namespace: payflow
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: wallet-service
+  template:
+    metadata:
+      labels:
+        app: wallet-service
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: wallet-service
+        image: pamela001/payflow-wallet-service:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3001
+        env:
+        - name: PORT
+          value: "3001"
+
+        # Postgres
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: payflow-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: payflow-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: payflow-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: payflow-secrets
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: payflow-secrets
+              key: DB_PASSWORD
+
+        # Redis (repo expects REDIS_URL)
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+
+        # App
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: payflow-config
+              key: NODE_ENV
+        - name: CONTAINER_ENV
+          value: "true"
+        - name: SERVICE_NAME
+          value: "wallet-service"
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          failureThreshold: 30
+          periodSeconds: 5
+          timeoutSeconds: 5
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 6
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6

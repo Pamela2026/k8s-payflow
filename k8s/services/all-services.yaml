@@ -1,0 +1,132 @@
+# All Services for Payflow Application
+# This file contains all services for deployments and StatefulSets
+
+# Frontend Service (LoadBalancer for external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: payflow
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer
+---
+# API Gateway Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: payflow
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP
+---
+# Auth Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: payflow
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 3004
+    targetPort: 3004
+  type: ClusterIP
+---
+# Wallet Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: wallet-service
+  namespace: payflow
+spec:
+  selector:
+    app: wallet-service
+  ports:
+  - port: 3001
+    targetPort: 3001
+  type: ClusterIP
+---
+# Transaction Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-service
+  namespace: payflow
+spec:
+  selector:
+    app: transaction-service
+  ports:
+  - port: 3002
+    targetPort: 3002
+  type: ClusterIP
+---
+# Notification Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: payflow
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 3003
+    targetPort: 3003
+  type: ClusterIP
+---
+# PostgreSQL Service (Headless for StatefulSet)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: payflow
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  clusterIP: None
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: payflow
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+---
+# RabbitMQ Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+  namespace: payflow
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+  - name: amqp
+    port: 5672
+    targetPort: 5672
+  - name: management
+    port: 15672
+    targetPort: 15672
+  clusterIP: None
