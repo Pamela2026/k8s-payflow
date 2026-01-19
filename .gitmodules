@@ -1,0 +1,4 @@
+[submodule "payflow-wallet"]
+	path = payflow-wallet
+	url = https://github.com/Ship-With-Zee/payflow-wallet.git
+	branch = test
