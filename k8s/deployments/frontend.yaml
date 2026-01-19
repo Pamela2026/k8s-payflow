@@ -25,12 +25,15 @@ spec:
         ports:
         - containerPort: 80
         env:
-        # API base URL injected into the frontend build/runtime
-        - name: REACT_APP_API_URL
+        # Nginx proxy target inside the cluster
+        - name: API_GATEWAY_URL
           valueFrom:
             configMapKeyRef:
               name: payflow-config
               key: API_GATEWAY_URL
+        # Browser should hit same-origin and let nginx proxy /api
+        - name: REACT_APP_API_URL
+          value: /api
         resources:
           # Conservative defaults for single-node clusters
           requests:
