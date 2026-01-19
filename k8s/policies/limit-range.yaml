@@ -1,3 +1,4 @@
+# Default and min/max resource limits per container
 apiVersion: v1
 kind: LimitRange
 metadata:
@@ -5,17 +6,18 @@ metadata:
   namespace: payflow
 spec:
   limits:
-  - default:
+  - type: Container
+    # Defaults applied when requests/limits are omitted
+    default:
       cpu: 500m
       memory: 512Mi
     defaultRequest:
       cpu: 100m
       memory: 128Mi
-    type: Container
-  - max:
-      cpu: "2"
-      memory: 2Gi
+    # Hard boundaries for container sizing
     min:
       cpu: 50m
       memory: 64Mi
-    type: Container
+    max:
+      cpu: "2"
+      memory: 2Gi

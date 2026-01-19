@@ -1,4 +1,5 @@
-# Default deny all traffic
+# NetworkPolicies to enforce least-privilege traffic
+# 1) Default deny all traffic in namespace
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -7,182 +8,307 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
 ---
-# Allow frontend to call API Gateway
+# 2) Allow DNS egress for all pods (simple + reliable)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: frontend-to-api-gateway
+  name: allow-dns-egress
+  namespace: payflow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}   # allow to cluster DNS wherever it runs
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# 3) Allow ingress to Frontend (80) from anywhere (including ingress controller)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-ingress
   namespace: payflow
 spec:
   podSelector:
     matchLabels:
       app: frontend
   policyTypes:
-  - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: api-gateway
-    ports:
-    - protocol: TCP
-      port: 3000
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 80
 ---
-# Allow API Gateway to call all services
+# 4) Allow ingress to API Gateway (3000) from anywhere (including ingress controller)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: api-gateway-to-services
+  name: allow-api-gateway-ingress
   namespace: payflow
 spec:
   podSelector:
     matchLabels:
       app: api-gateway
   policyTypes:
-  - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: auth-service
-    ports:
-    - protocol: TCP
-      port: 3004
-  - to:
-    - podSelector:
-        matchLabels:
-          app: wallet-service
-    ports:
-    - protocol: TCP
-      port: 3001
-  - to:
-    - podSelector:
-        matchLabels:
-          app: transaction-service
-    ports:
-    - protocol: TCP
-      port: 3002
-  - to:
-    - podSelector:
-        matchLabels:
-          app: notification-service
-    ports:
-    - protocol: TCP
-      port: 3003
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 3000
 ---
-# Allow services to access database
+# 5) Frontend -> API Gateway (egress)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: services-to-postgres
+  name: frontend-egress-to-api-gateway
+  namespace: payflow
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+# 6) API Gateway -> services (egress)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-egress-to-services
+  namespace: payflow
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: auth-service
+      ports:
+        - protocol: TCP
+          port: 3004
+    - to:
+        - podSelector:
+            matchLabels:
+              app: wallet-service
+      ports:
+        - protocol: TCP
+          port: 3001
+    - to:
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+      ports:
+        - protocol: TCP
+          port: 3002
+    - to:
+        - podSelector:
+            matchLabels:
+              app: notification-service
+      ports:
+        - protocol: TCP
+          port: 3003
+---
+# 7) Services ingress from API Gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: services-ingress-from-api-gateway
+  namespace: payflow
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - auth-service
+          - wallet-service
+          - transaction-service
+          - notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 3004
+        - protocol: TCP
+          port: 3001
+        - protocol: TCP
+          port: 3002
+        - protocol: TCP
+          port: 3003
+---
+# 8) Services -> infra (egress)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: services-egress-to-infra
+  namespace: payflow
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - auth-service
+          - wallet-service
+          - transaction-service
+          - notification-service
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: rabbitmq
+      ports:
+        - protocol: TCP
+          port: 5672
+---
+# 9) Postgres ingress from services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-ingress-from-services
   namespace: payflow
 spec:
   podSelector:
     matchLabels:
       app: postgres
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: auth-service
-    - podSelector:
-        matchLabels:
-          app: wallet-service
-    - podSelector:
-        matchLabels:
-          app: transaction-service
-    - podSelector:
-        matchLabels:
-          app: notification-service
-    ports:
-    - protocol: TCP
-      port: 5432
+    - from:
+        - podSelector:
+            matchLabels:
+              app: auth-service
+        - podSelector:
+            matchLabels:
+              app: wallet-service
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+        - podSelector:
+            matchLabels:
+              app: notification-service
+        - podSelector:
+            matchLabels:
+              app: payflow-db-migration
+        - podSelector:
+            matchLabels:
+              app: transaction-timeout-handler
+      ports:
+        - protocol: TCP
+          port: 5432
 ---
-# Allow services to access Redis
+# 10) Redis ingress from services
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: services-to-redis
+  name: redis-ingress-from-services
   namespace: payflow
 spec:
   podSelector:
     matchLabels:
       app: redis
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: auth-service
-    - podSelector:
-        matchLabels:
-          app: wallet-service
-    - podSelector:
-        matchLabels:
-          app: transaction-service
-    ports:
-    - protocol: TCP
-      port: 6379
+    - from:
+        - podSelector:
+            matchLabels:
+              app: auth-service
+        - podSelector:
+            matchLabels:
+              app: wallet-service
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+      ports:
+        - protocol: TCP
+          port: 6379
 ---
-# Allow services to access RabbitMQ
+# 11) RabbitMQ ingress from services
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: services-to-rabbitmq
+  name: rabbitmq-ingress-from-services
   namespace: payflow
 spec:
   podSelector:
     matchLabels:
       app: rabbitmq
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: transaction-service
-    - podSelector:
-        matchLabels:
-          app: notification-service
-    ports:
-    - protocol: TCP
-      port: 5672
+    - from:
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+        - podSelector:
+            matchLabels:
+              app: notification-service
+      ports:
+        - protocol: TCP
+          port: 5672
 ---
-# Allow external traffic to frontend and API Gateway
+# 12) Job/CronJob egress to Postgres
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-external-ingress
+  name: jobs-egress-to-postgres
   namespace: payflow
 spec:
   podSelector:
-    matchLabels:
-      app: frontend
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - payflow-db-migration
+          - transaction-timeout-handler
   policyTypes:
-  - Ingress
-  ingress:
-  - ports:
-    - protocol: TCP
-      port: 80
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-external-api-gateway
-  namespace: payflow
-spec:
-  podSelector:
-    matchLabels:
-      app: api-gateway
-  policyTypes:
-  - Ingress
-  ingress:
-  - ports:
-    - protocol: TCP
-      port: 3000
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432

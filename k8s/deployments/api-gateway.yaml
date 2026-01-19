@@ -1,3 +1,4 @@
+# API gateway deployment and health checks
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,6 +25,7 @@ spec:
         ports:
         - containerPort: 3000
         env:
+        # Service URLs from ConfigMap
         - name: PORT
           value: "3000"
         - name: AUTH_SERVICE_URL
@@ -56,12 +58,14 @@ spec:
         - name: CORS_ORIGIN
           value: "*"
         resources:
+          # Conservative defaults for single-node clusters
           requests:
             memory: "128Mi"
             cpu: "100m"
           limits:
             memory: "256Mi"
             cpu: "200m"
+        # Probes used by Kubernetes for rollout gating and restarts
         livenessProbe:
           httpGet:
             path: /health

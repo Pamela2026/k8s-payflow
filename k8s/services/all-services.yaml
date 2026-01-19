@@ -1,4 +1,4 @@
-# All Services for Payflow Application
+# Service definitions for Payflow workloads
 # This file contains all services for deployments and StatefulSets
 
 # Frontend Service (LoadBalancer for external access)
