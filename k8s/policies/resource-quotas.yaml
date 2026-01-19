@@ -1,3 +1,4 @@
+# Namespace-wide caps to control resource usage
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -5,9 +6,11 @@ metadata:
   namespace: payflow
 spec:
   hard:
+    # Aggregate CPU/memory requests and limits
     requests.cpu: "2"
     requests.memory: 4Gi
     limits.cpu: "4"
     limits.memory: 8Gi
-    pods: "10"
+    # Object count ceilings
+    pods: "15"
     secrets: "5"

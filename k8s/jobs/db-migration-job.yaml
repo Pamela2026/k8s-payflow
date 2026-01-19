@@ -1,9 +1,11 @@
+# One-time Flyway migration job
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: payflow-db-migration
   namespace: payflow
 spec:
+  # Clean up after completion
   ttlSecondsAfterFinished: 3600
   backoffLimit: 3
   template:
@@ -16,6 +18,7 @@ spec:
       - name: db-migration
         image: flyway/flyway:9.22.3
         env:
+        # Database connection inputs
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:
@@ -50,11 +53,13 @@ spec:
         - -c
         args:
         - |
+          # Build Flyway JDBC URL and apply migrations
           set -e
           export FLYWAY_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
           export FLYWAY_USER="$DB_USER"
           export FLYWAY_PASSWORD="$DB_PASSWORD"
-          flyway -connectRetries=60 migrate
+          flyway -baselineOnMigrate=true -connectRetries=60 migrate
+
         resources:
           requests:
             cpu: 100m
@@ -69,5 +74,6 @@ spec:
           readOnly: true
       volumes:
       - name: db-migrations
+        # SQL scripts sourced from ConfigMap
         configMap:
           name: payflow-db-migrations

@@ -1,9 +1,11 @@
+# Periodic job to mark stale transactions as failed
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: transaction-timeout-handler
   namespace: payflow
 spec:
+  # Run every minute
   schedule: "*/1 * * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
@@ -20,6 +22,7 @@ spec:
           - name: timeout-handler
             image: postgres:15
             env:
+            # Database connection inputs
             - name: DB_HOST
               valueFrom:
                 configMapKeyRef:
@@ -50,6 +53,7 @@ spec:
             - -c
             args:
             - |
+              # Mark pending transactions that exceeded the timeout
               set -e
               export PGPASSWORD="$DB_PASSWORD"
               psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \

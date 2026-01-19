@@ -1,3 +1,4 @@
+# Redis deployment for caching and session data
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,8 +25,7 @@ spec:
         ports:
         - containerPort: 6379
 
-        # Redis itself does NOT need REDIS_HOST / REDIS_PORT
-        # Those are for clients, not the server
+        # Redis runtime options
 
         args:
           - "--appendonly"
@@ -36,6 +36,7 @@ spec:
           mountPath: /data
 
         resources:
+          # Conservative defaults for single-node clusters
           requests:
             memory: "64Mi"
             cpu: "50m"
@@ -43,6 +44,7 @@ spec:
             memory: "256Mi"
             cpu: "200m"
 
+        # Simple ping probes for readiness/liveness
         livenessProbe:
           exec:
             command:
@@ -61,4 +63,5 @@ spec:
 
       volumes:
       - name: redis-data
+        # Ephemeral storage for dev (swap to PVC for persistence)
         emptyDir: {}

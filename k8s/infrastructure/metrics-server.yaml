@@ -1,3 +1,4 @@
+# Metrics Server manifests (required for HPA)
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -6,6 +7,7 @@ metadata:
   name: metrics-server
   namespace: kube-system
 ---
+# RBAC for reading metrics APIs
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -25,6 +27,7 @@ rules:
   - get
   - list
 ---
+# RBAC for metrics server to read nodes/pods
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -48,6 +51,7 @@ rules:
   - list
   - watch
 ---
+# Allow metrics server to read extension-apiserver auth config
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -64,6 +68,7 @@ subjects:
   name: metrics-server
   namespace: kube-system
 ---
+# Bind auth delegator role for metrics server
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -79,6 +84,7 @@ subjects:
   name: metrics-server
   namespace: kube-system
 ---
+# Bind metrics server role cluster-wide
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -94,6 +100,7 @@ subjects:
   name: metrics-server
   namespace: kube-system
 ---
+# ClusterIP service for the metrics server API
 apiVersion: v1
 kind: Service
 metadata:
@@ -110,6 +117,7 @@ spec:
   selector:
     k8s-app: metrics-server
 ---
+# Metrics server deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -131,6 +139,7 @@ spec:
     spec:
       containers:
       - args:
+        # Kubelet access and TLS settings for local clusters
         - --cert-dir=/tmp
         - --secure-port=4443
         - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
@@ -160,6 +169,7 @@ spec:
           initialDelaySeconds: 20
           periodSeconds: 10
         resources:
+          # Small default footprint
           requests:
             cpu: 100m
             memory: 200Mi
@@ -167,6 +177,7 @@ spec:
             cpu: 500m
             memory: 500Mi
         securityContext:
+          # Harden container runtime
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -182,6 +193,7 @@ spec:
       - emptyDir: {}
         name: tmp-dir
 ---
+# Register metrics.k8s.io API service
 apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
