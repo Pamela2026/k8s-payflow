@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: pamela001/payflow-frontend:v1
+        image: pamela001/payflow-frontend:v2
         ports:
         - containerPort: 80
         env:

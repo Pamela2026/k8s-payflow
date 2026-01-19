@@ -146,7 +146,20 @@ kubectl apply -f k8s/jobs/transaction-timeout-handler.yaml
 kubectl -n payflow get pods,svc,ingress
 ```
 
-If you use the HTTP ingress, add local DNS entries for the hostnames:
+If you use the HTTP ingress, you can access it two ways:
+
+Option A: Use the ingress IP (works without DNS)
+
+```bash
+kubectl -n payflow get ingress
+```
+
+Then access:
+
+- Frontend: `http://<INGRESS_IP>/`
+- API Gateway: `http://<INGRESS_IP>/api`
+
+Option B: Use local DNS entries for the hostnames:
 
 ```text
 <ingress-ip> payflow.local
@@ -157,6 +170,23 @@ Then access:
 
 - Frontend: `http://payflow.local`
 - API Gateway: `http://api.payflow.local`
+
+## AWS EC2 access notes
+
+- Open inbound rules on the EC2 security group for ports 80 (HTTP) and 443 (HTTPS) from your client IP or CIDR.
+- Use the EC2 public IP or public DNS name as `<INGRESS_IP>` in the URLs above if the ingress controller is exposed on the instance.
+- If you prefer hostnames, point `payflow.local` and `api.payflow.local` at the EC2 public IP in your local `hosts` file.
+- If your ingress controller service is `ClusterIP`, use port-forwarding:
+
+```bash
+microk8s kubectl -n ingress get svc
+microk8s kubectl -n ingress port-forward svc/<ingress-service-name> 8080:80 8443:443
+```
+
+Then access:
+
+- Frontend: `http://<EC2_PUBLIC_IP>:8080/`
+- API Gateway: `http://<EC2_PUBLIC_IP>:8080/api`
 
 ## Notes
 

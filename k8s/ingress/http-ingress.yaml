@@ -12,8 +12,24 @@ metadata:
     nginx.ingress.kubernetes.io/enable-cors: "true"
 spec:
   ingressClassName: public
-  # Host-based routing for frontend and API
+  # Host-based routing for frontend and API, with a hostless fallback for IP access
   rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 3000
   - host: payflow.local
     http:
       paths:
