@@ -159,7 +159,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-wallet-to-transaction
+  name: transaction-egress-to-wallet
   namespace: payflow
 spec:
   podSelector:
@@ -167,6 +167,26 @@ spec:
       app: transaction-service
   policyTypes:
   - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: wallet-service
+    ports:
+    - protocol: TCP
+      port: 3001
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-wallet-to-transaction
+  namespace: payflow
+spec:
+  podSelector:
+    matchLabels:
+      app: transaction-service
+  policyTypes:
+  - Ingress
   ingress:
   - from:
     - podSelector:
@@ -174,7 +194,7 @@ spec:
           app: wallet-service
     ports:
     - protocol: TCP
-      port: 3001
+      port: 3002
 ---
 # 7) Services ingress from API Gateway
 apiVersion: networking.k8s.io/v1
