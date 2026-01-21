@@ -176,17 +176,23 @@ Then access:
 - Open inbound rules on the EC2 security group for ports 80 (HTTP) and 443 (HTTPS) from your client IP or CIDR.
 - Use the EC2 public IP or public DNS name as `<INGRESS_IP>` in the URLs above if the ingress controller is exposed on the instance.
 - If you prefer hostnames, point `payflow.local` and `api.payflow.local` at the EC2 public IP in your local `hosts` file.
-- If your ingress controller service is `ClusterIP`, use port-forwarding:
+- If your ingress controller service is `ClusterIP`, use port-forwarding. From a browser on your laptop, set up an SSH tunnel to the EC2 host:
+
+```bash
+ssh -L 8080:127.0.0.1:8080 ubuntu@<EC2_PUBLIC_IP>
+```
+
+Then on the EC2 host, run:
 
 ```bash
 microk8s kubectl -n ingress get svc
-microk8s kubectl -n ingress port-forward svc/<ingress-service-name> 8080:80 8443:443
+microk8s kubectl -n ingress port-forward svc/<ingress-service-name> 8080:80
 ```
 
-Then access:
+Then access locally:
 
-- Frontend: `http://<EC2_PUBLIC_IP>:8080/`
-- API Gateway: `http://<EC2_PUBLIC_IP>:8080/api`
+- Frontend: `http://localhost:8080/`
+- API Gateway: `http://localhost:8080/api`
 
 ## Notes
 
