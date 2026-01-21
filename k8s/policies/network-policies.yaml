@@ -293,6 +293,26 @@ spec:
     - protocol: TCP
       port: 15672
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: services-egress-to-rabbitmq-management
+  namespace: payflow
+spec:
+  podSelector:
+    matchLabels:
+      app: transaction-service
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: rabbitmq
+    ports:
+    - protocol: TCP
+      port: 15672
+---
 # 9) Postgres ingress from services
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
