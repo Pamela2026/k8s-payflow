@@ -1,5 +1,6 @@
 # NetworkPolicies to enforce least-privilege traffic
 # 1) Default deny all traffic in namespace
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -136,6 +137,7 @@ spec:
         - protocol: TCP
           port: 3003
 ---
+# 7) Transaction service -> Wallet service (ingress to wallet)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -146,16 +148,17 @@ spec:
     matchLabels:
       app: wallet-service
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: transaction-service
-    ports:
-    - protocol: TCP
-      port: 3001
+    - from:
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+      ports:
+        - protocol: TCP
+          port: 3001
 ---
+# 8) Transaction service -> Wallet service (egress)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -166,16 +169,17 @@ spec:
     matchLabels:
       app: transaction-service
   policyTypes:
-  - Egress
+    - Egress
   egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: wallet-service
-    ports:
-    - protocol: TCP
-      port: 3001
+    - to:
+        - podSelector:
+            matchLabels:
+              app: wallet-service
+      ports:
+        - protocol: TCP
+          port: 3001
 ---
+# 9) Wallet service -> Transaction service (ingress to transaction-service)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -186,17 +190,17 @@ spec:
     matchLabels:
       app: transaction-service
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: wallet-service
-    ports:
-    - protocol: TCP
-      port: 3002
+    - from:
+        - podSelector:
+            matchLabels:
+              app: wallet-service
+      ports:
+        - protocol: TCP
+          port: 3002
 ---
-# 7) Services ingress from API Gateway
+# 10) Services ingress from API Gateway
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -229,7 +233,7 @@ spec:
         - protocol: TCP
           port: 3003
 ---
-# 8) Services -> infra (egress)
+# 11) Services -> infra (egress)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -270,6 +274,7 @@ spec:
         - protocol: TCP
           port: 5672
 ---
+# 12) RabbitMQ management ingress from services (15672)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -280,19 +285,20 @@ spec:
     matchLabels:
       app: rabbitmq
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: transaction-service
-    - podSelector:
-        matchLabels:
-          app: notification-service
-    ports:
-    - protocol: TCP
-      port: 15672
+    - from:
+        - podSelector:
+            matchLabels:
+              app: transaction-service
+        - podSelector:
+            matchLabels:
+              app: notification-service
+      ports:
+        - protocol: TCP
+          port: 15672
 ---
+# 13) Services egress to RabbitMQ management (15672)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -303,17 +309,17 @@ spec:
     matchLabels:
       app: transaction-service
   policyTypes:
-  - Egress
+    - Egress
   egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: rabbitmq
-    ports:
-    - protocol: TCP
-      port: 15672
+    - to:
+        - podSelector:
+            matchLabels:
+              app: rabbitmq
+      ports:
+        - protocol: TCP
+          port: 15672
 ---
-# 9) Postgres ingress from services
+# 14) Postgres ingress from services
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -349,7 +355,7 @@ spec:
         - protocol: TCP
           port: 5432
 ---
-# 10) Redis ingress from services
+# 15) Redis ingress from services
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -376,7 +382,7 @@ spec:
         - protocol: TCP
           port: 6379
 ---
-# 11) RabbitMQ ingress from services
+# 16) RabbitMQ ingress from services
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -400,7 +406,7 @@ spec:
         - protocol: TCP
           port: 5672
 ---
-# 12) Job/CronJob egress to Postgres
+# 17) Job/CronJob egress to Postgres
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
