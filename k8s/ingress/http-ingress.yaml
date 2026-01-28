@@ -29,7 +29,7 @@ spec:
           service:
             name: api-gateway
             port:
-              number: 3000
+              number: 80
   - host: payflow.local
     http:
       paths:
@@ -46,7 +46,7 @@ spec:
           service:
             name: api-gateway
             port:
-              number: 3000
+              number: 80
   - host: api.payflow.local
     http:
       paths:
@@ -56,4 +56,4 @@ spec:
           service:
             name: api-gateway
             port:
-              number: 3000
+              number: 80

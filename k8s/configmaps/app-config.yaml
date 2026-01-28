@@ -23,7 +23,7 @@ data:
   WALLET_SERVICE_URL: "http://wallet-service:3001"
   TRANSACTION_SERVICE_URL: "http://transaction-service:3002"
   NOTIFICATION_SERVICE_URL: "http://notification-service:3003"
-  API_GATEWAY_URL: "http://api-gateway:3000"
+  API_GATEWAY_URL: "http://api-gateway:80"
   
   # Application defaults
   NODE_ENV: "development"
