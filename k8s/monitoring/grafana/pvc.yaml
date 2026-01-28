@@ -4,6 +4,7 @@ metadata:
   name: grafana-data
   namespace: monitoring
 spec:
+  storageClassName: microk8s-hostpath
   accessModes:
     - ReadWriteOnce
   resources:
