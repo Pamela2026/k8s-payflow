@@ -1,4 +1,4 @@
-# Horizontal pod autoscalers for core services
+# HorizontalPodAutoscaler: scales the api-gateway Deployment based on CPU and memory utilization.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -25,7 +25,7 @@ spec:
         type: Utilization
         averageUtilization: 80
 ---
-# HPA for auth-service
+# HorizontalPodAutoscaler: scales the auth-service Deployment based on CPU utilization.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -46,7 +46,7 @@ spec:
         type: Utilization
         averageUtilization: 70
 ---
-# HPA for wallet-service
+# HorizontalPodAutoscaler: scales the wallet-service Deployment based on CPU utilization.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -67,7 +67,7 @@ spec:
         type: Utilization
         averageUtilization: 70
 ---
-# HPA for transaction-service
+# HorizontalPodAutoscaler: scales the transaction-service Deployment based on CPU utilization.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -88,7 +88,7 @@ spec:
         type: Utilization
         averageUtilization: 70
 ---
-# HPA for frontend
+# HorizontalPodAutoscaler: scales the frontend Deployment based on CPU utilization.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
