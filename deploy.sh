@@ -131,5 +131,8 @@ apply_file "k8s/jobs/transaction-timeout-handler.yaml"
 echo "🌐 Deploying ingress..."
 apply_file "k8s/ingress/http-ingress.yaml"
 
+echo "🌐 Deploying metrics-server..."
+apply_file "k8s/infrastructure/metrics-server.yaml"
+
 echo "✅ PayFlow deployment completed successfully!"
 echo "🔍 Check status: kubectl get pods -n $NAMESPACE"
