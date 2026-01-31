@@ -5,6 +5,9 @@ loki:
   auth_enabled: false
   commonConfig:
     replication_factor: 1
+    ring:
+      kvstore:
+        store: inmemory
   # Required schema for single binary deployments with persistence
   schemaConfig:
     configs:
@@ -50,3 +53,10 @@ write:
 
 backend:
   replicas: 0
+
+# Disable memcached caches for small/dev clusters
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
