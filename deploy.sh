@@ -146,8 +146,8 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
 helm repo update >/dev/null
 
-GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:payflow123}"
-if [[ "$GRAFANA_ADMIN_PASSWORD" == "payflow123" ]]; then
+GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:-changeme}"
+if [[ "$GRAFANA_ADMIN_PASSWORD" == "changeme" ]]; then
   echo "⚠️  Grafana admin password is set to default (changeme). Set GRAFANA_ADMIN_PASSWORD to override."
 fi
 
