@@ -1,0 +1,103 @@
+# Nightly PostgreSQL backup job that writes compressed dumps to a PVC and prunes old files
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: payflow-db-backup
+  namespace: payflow
+spec:
+  # Run at 02:00 UTC every day
+  schedule: "0 2 * * *"
+  timeZone: "UTC"
+  # Keep only a small history of Job objects
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      # Retry a couple of times on transient DB errors
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: payflow-db-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: db-backup
+            image: postgres:15
+            env:
+            # Read database connection settings from ConfigMap and Secret
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: payflow-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: payflow-config
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: payflow-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: payflow-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: payflow-secrets
+                  key: DB_PASSWORD
+            command:
+            - /bin/bash
+            - -c
+            args:
+            - |
+              set -euo pipefail
+              export PGPASSWORD="$DB_PASSWORD"
+              BACKUP_DIR="/backups"
+              TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+              BACKUP_FILE="${BACKUP_DIR}/payflow_${DB_NAME}_${TIMESTAMP}.sql.gz"
+
+              # Stream pg_dump into gzip to reduce storage size
+              pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" | gzip -9 > "$BACKUP_FILE"
+
+              # Fail the job if the backup is missing or empty
+              if [ ! -s "$BACKUP_FILE" ]; then
+                echo "Backup failed or empty: $BACKUP_FILE" >&2
+                exit 1
+              fi
+
+              # Delete backups older than 7 days to manage disk usage
+              find "$BACKUP_DIR" -type f -name "*.sql.gz" -mtime +7 -print -delete
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "128Mi"
+              limits:
+                cpu: "300m"
+                memory: "256Mi"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: payflow-db-backups
+---
+# Persistent volume claim for database backups
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: payflow-db-backups
+  namespace: payflow
+spec:
+  storageClassName: microk8s-hostpath
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

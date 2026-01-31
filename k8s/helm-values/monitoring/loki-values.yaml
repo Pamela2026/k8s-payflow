@@ -1,0 +1,50 @@
+# Minimal Loki settings for t3.medium
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  # Required schema for single binary deployments with persistence
+  schemaConfig:
+    configs:
+    - from: 2024-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: loki_index_
+        period: 24h
+  storageConfig:
+    boltdb_shipper:
+      shared_store: filesystem
+    filesystem:
+      directory: /var/loki/chunks
+  storage:
+    type: filesystem
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+
+# Disable scalable mode targets to avoid replica conflicts
+simpleScalable:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+backend:
+  replicas: 0

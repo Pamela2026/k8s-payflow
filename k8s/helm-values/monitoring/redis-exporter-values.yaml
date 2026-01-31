@@ -1,0 +1,15 @@
+# Redis exporter settings for payflow Redis
+redisAddress: redis-service.payflow.svc.cluster.local:6379
+
+service:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9121"
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 48Mi
+  limits:
+    cpu: 150m
+    memory: 128Mi

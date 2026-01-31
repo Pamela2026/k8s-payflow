@@ -1,0 +1,20 @@
+# Postgres exporter settings for payflow DB
+config:
+  datasource:
+    host: postgres-service.payflow.svc.cluster.local
+    port: "5432"
+    database: payflow
+    sslmode: disable
+
+service:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9187"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
