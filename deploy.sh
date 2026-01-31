@@ -128,7 +128,7 @@ apply_file "k8s/autoscaling/hpa.yaml"
 
 echo "🕒 Background jobs..."
 apply_file "k8s/jobs/transaction-timeout-handler.yaml"
-apply_file "k8s/jobs/db-migration-cronjob.yaml"
+apply_file "k8s/jobs/db-backup-cronjob.yaml"
 
 
 echo "🌐 Deploying ingress..."
