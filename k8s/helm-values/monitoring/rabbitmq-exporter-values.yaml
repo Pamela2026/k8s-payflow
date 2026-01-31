@@ -1,0 +1,16 @@
+# RabbitMQ exporter settings for payflow RabbitMQ
+rabbitmq:
+  url: http://rabbitmq-service.payflow.svc.cluster.local:15672
+
+service:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9419"
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 150m
+    memory: 128Mi

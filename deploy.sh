@@ -2,6 +2,7 @@
 set -euo pipefail
 
 NAMESPACE="payflow"
+MONITORING_NAMESPACE="monitoring"
 TIMEOUT="${TIMEOUT:-600s}"
 APPLY_DELAY="${APPLY_DELAY:-2}"
 
@@ -127,12 +128,101 @@ apply_file "k8s/autoscaling/hpa.yaml"
 
 echo "🕒 Background jobs..."
 apply_file "k8s/jobs/transaction-timeout-handler.yaml"
+apply_file "k8s/jobs/db-migration-cronjob.yaml"
+
 
 echo "🌐 Deploying ingress..."
 apply_file "k8s/ingress/http-ingress.yaml"
 
 echo "🌐 Deploying metrics-server..."
 apply_file "k8s/infrastructure/metrics-server.yaml"
+
+echo "📊 Deploying monitoring stack with Helm..."
+if ! kubectl get namespace "$MONITORING_NAMESPACE" >/dev/null 2>&1; then
+  kubectl create namespace "$MONITORING_NAMESPACE"
+fi
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
+helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
+helm repo update >/dev/null
+
+GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:payflow123}"
+if [[ "$GRAFANA_ADMIN_PASSWORD" == "payflow123" ]]; then
+  echo "⚠️  Grafana admin password is set to default (changeme). Set GRAFANA_ADMIN_PASSWORD to override."
+fi
+
+helm upgrade --install payflow-prometheus prometheus-community/prometheus \
+  -n "$MONITORING_NAMESPACE" \
+  -f k8s/helm-values/monitoring/prometheus-values.yaml \
+  --create-namespace
+
+helm upgrade --install payflow-loki grafana/loki \
+  -n "$MONITORING_NAMESPACE" \
+  -f k8s/helm-values/monitoring/loki-values.yaml \
+  --create-namespace
+
+helm upgrade --install payflow-promtail grafana/promtail \
+  -n "$MONITORING_NAMESPACE" \
+  -f k8s/helm-values/monitoring/promtail-values.yaml \
+  --create-namespace
+
+# Exporter credentials (only if secrets exist and are populated)
+POSTGRES_EXPORTER_USER=""
+POSTGRES_EXPORTER_PASSWORD=""
+REDIS_EXPORTER_PASSWORD=""
+RABBITMQ_EXPORTER_USER=""
+RABBITMQ_EXPORTER_PASSWORD=""
+
+if kubectl get secret payflow-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+  POSTGRES_EXPORTER_USER="$(kubectl get secret payflow-secrets -n "$NAMESPACE" -o jsonpath='{.data.DB_USER}' 2>/dev/null | base64 -d || true)"
+  POSTGRES_EXPORTER_PASSWORD="$(kubectl get secret payflow-secrets -n "$NAMESPACE" -o jsonpath='{.data.DB_PASSWORD}' 2>/dev/null | base64 -d || true)"
+  REDIS_EXPORTER_PASSWORD="$(kubectl get secret payflow-secrets -n "$NAMESPACE" -o jsonpath='{.data.REDIS_PASSWORD}' 2>/dev/null | base64 -d || true)"
+  RABBITMQ_EXPORTER_USER="$(kubectl get secret payflow-secrets -n "$NAMESPACE" -o jsonpath='{.data.RABBITMQ_DEFAULT_USER}' 2>/dev/null | base64 -d || true)"
+  RABBITMQ_EXPORTER_PASSWORD="$(kubectl get secret payflow-secrets -n "$NAMESPACE" -o jsonpath='{.data.RABBITMQ_DEFAULT_PASS}' 2>/dev/null | base64 -d || true)"
+fi
+
+POSTGRES_EXPORTER_ARGS=()
+if [[ -n "$POSTGRES_EXPORTER_USER" && -n "$POSTGRES_EXPORTER_PASSWORD" ]]; then
+  POSTGRES_EXPORTER_ARGS+=(--set "config.datasource.user=${POSTGRES_EXPORTER_USER}")
+  POSTGRES_EXPORTER_ARGS+=(--set "config.datasource.password=${POSTGRES_EXPORTER_PASSWORD}")
+else
+  echo "⚠️  Postgres exporter credentials missing; update payflow-secrets or set via Helm."
+fi
+
+REDIS_EXPORTER_ARGS=()
+if [[ -n "$REDIS_EXPORTER_PASSWORD" ]]; then
+  REDIS_EXPORTER_ARGS+=(--set "auth.enabled=true")
+  REDIS_EXPORTER_ARGS+=(--set "auth.password=${REDIS_EXPORTER_PASSWORD}")
+fi
+
+RABBITMQ_EXPORTER_ARGS=()
+if [[ -n "$RABBITMQ_EXPORTER_USER" && -n "$RABBITMQ_EXPORTER_PASSWORD" ]]; then
+  RABBITMQ_EXPORTER_ARGS+=(--set "rabbitmq.user=${RABBITMQ_EXPORTER_USER}")
+  RABBITMQ_EXPORTER_ARGS+=(--set "rabbitmq.password=${RABBITMQ_EXPORTER_PASSWORD}")
+else
+  echo "⚠️  RabbitMQ exporter credentials missing; update payflow-secrets or set via Helm."
+fi
+
+helm upgrade --install payflow-postgres-exporter prometheus-community/prometheus-postgres-exporter \
+  -n "$NAMESPACE" \
+  -f k8s/helm-values/monitoring/postgres-exporter-values.yaml \
+  "${POSTGRES_EXPORTER_ARGS[@]}"
+
+helm upgrade --install payflow-redis-exporter prometheus-community/prometheus-redis-exporter \
+  -n "$NAMESPACE" \
+  -f k8s/helm-values/monitoring/redis-exporter-values.yaml \
+  "${REDIS_EXPORTER_ARGS[@]}"
+
+helm upgrade --install payflow-rabbitmq-exporter prometheus-community/prometheus-rabbitmq-exporter \
+  -n "$NAMESPACE" \
+  -f k8s/helm-values/monitoring/rabbitmq-exporter-values.yaml \
+  "${RABBITMQ_EXPORTER_ARGS[@]}"
+
+helm upgrade --install payflow-grafana grafana/grafana \
+  -n "$MONITORING_NAMESPACE" \
+  -f k8s/helm-values/monitoring/grafana-values.yaml \
+  --set adminPassword="$GRAFANA_ADMIN_PASSWORD" \
+  --create-namespace
 
 echo "✅ PayFlow deployment completed successfully!"
 echo "🔍 Check status: kubectl get pods -n $NAMESPACE"
