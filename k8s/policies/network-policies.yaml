@@ -74,6 +74,39 @@ spec:
         - protocol: TCP
           port: 3000
 ---
+# allow-monitoring-scrape permits Prometheus in the monitoring namespace to scrape metrics endpoints.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring-scrape
+  namespace: payflow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 3001
+        - protocol: TCP
+          port: 3002
+        - protocol: TCP
+          port: 3003
+        - protocol: TCP
+          port: 3004
+        - protocol: TCP
+          port: 9187
+        - protocol: TCP
+          port: 9121
+        - protocol: TCP
+          port: 9419
+---
 # frontend-egress-to-api-gateway allows frontend pods to reach api-gateway on TCP 3000.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
