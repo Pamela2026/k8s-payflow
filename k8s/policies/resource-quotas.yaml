@@ -13,4 +13,4 @@ spec:
     limits.memory: 8Gi
     # Object count ceilings
     pods: "15"
-    secrets: "5"
+    secrets: "10"
