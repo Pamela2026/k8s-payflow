@@ -22,6 +22,8 @@ loki:
       directory: /var/loki/chunks
   storage:
     type: filesystem
+  limits_config:
+    allow_structured_metadata: false
 
 singleBinary:
   replicas: 1
