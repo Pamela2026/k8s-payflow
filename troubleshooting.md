@@ -142,3 +142,98 @@ Fix:
   - `kubectl -n payflow logs deploy/<deployment>`
 - Check a pod environment:
   - `kubectl -n payflow exec -it <pod> -- env`
+
+## Monitoring troubleshooting (Prometheus, Grafana, Loki)
+
+Use this section when you see "DOWN" targets in Prometheus or no data in Grafana.
+
+### 1) Grafana UI not reachable
+
+Symptoms:
+- Browser shows "connection refused" on EC2 public IP.
+
+Cause:
+- `kubectl port-forward` binds to localhost on the EC2 host.
+
+Fix (SSH tunnel + port-forward):
+- On your laptop:
+  - `ssh -i /path/to/key.pem -L 3000:127.0.0.1:3000 ubuntu@<ec2-host>`
+- On EC2:
+  - `kubectl -n monitoring port-forward svc/payflow-grafana 3000:80`
+- Open `http://localhost:3000` on your laptop.
+
+### 2) Grafana has no metrics/logs
+
+Checks:
+- Data sources:
+  - Grafana -> Connections -> Data sources -> Prometheus and Loki should be present.
+- Prometheus targets:
+  - `kubectl -n monitoring port-forward svc/payflow-prometheus-server 9090:80`
+  - Open `http://localhost:9090/targets` and confirm payflow services are UP.
+- Loki logs:
+  - Grafana -> Explore -> Loki -> query `{namespace="payflow"}`.
+
+### 3) Prometheus target timeouts (context deadline exceeded)
+
+Cause:
+- Default-deny NetworkPolicy in `payflow` blocks scrapes from `monitoring`.
+
+Fix:
+- Apply the monitoring scrape policy:
+  - `kubectl apply -f k8s/policies/network-policies.yaml`
+- Verify the policy exists:
+  - `kubectl -n payflow get networkpolicy allow-monitoring-scrape`
+
+### 4) Promtail cannot push logs (connection refused)
+
+Symptoms:
+- Promtail logs show `connect: connection refused` to Loki.
+
+Causes:
+- Loki not ready yet or has invalid config.
+
+Fix:
+- Check Loki pod:
+  - `kubectl -n monitoring get pods | rg loki`
+  - `kubectl -n monitoring logs payflow-loki-0 --tail=200`
+- Ensure Loki uses single-binary + filesystem storage and has a schema:
+  - `k8s/helm-values/monitoring/loki-values.yaml`
+
+### 5) Loki CrashLoopBackOff
+
+Common causes:
+- Missing schema config or structured metadata mismatch.
+
+Fixes:
+- Ensure `schemaConfig` exists and `allow_structured_metadata: false`.
+- Disable caches for small clusters to avoid memcached dependencies.
+
+### 6) Exporters failing / no infra metrics
+
+Checks:
+- Exporter pods running:
+  - `kubectl -n payflow get pods | rg exporter`
+- Credentials come from `payflow-secrets`:
+  - `DB_USER`, `DB_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`
+
+Fix:
+- Update `k8s/secrets/db-secrets.yaml` or set secrets in cluster, then rerun `deploy.sh`.
+
+### 7) ResourceQuota blocks monitoring components
+
+Symptoms:
+- Errors like `exceeded quota: secrets` or `limits.cpu`.
+
+Fix:
+- Increase quotas in `k8s/policies/resource-quotas.yaml` and re-apply:
+  - `kubectl apply -f k8s/policies/resource-quotas.yaml`
+
+### 8) Quick in-cluster metrics check (without kubectl run limits)
+
+Some kubectl versions do not support `--limits` on `kubectl run`.
+Use overrides to avoid quota errors:
+
+```
+kubectl -n payflow run curltmp --rm -it --image=curlimages/curl \
+  --overrides='{"apiVersion":"v1","spec":{"containers":[{"name":"curltmp","image":"curlimages/curl","resources":{"requests":{"cpu":"10m","memory":"32Mi"},"limits":{"cpu":"50m","memory":"64Mi"}},"command":["sh","-c","curl -s http://api-gateway:80/metrics | head"]}],"restartPolicy":"Never"}}'
+```
