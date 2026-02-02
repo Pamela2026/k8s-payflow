@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Postgres StatefulSet and service for the Payflow database. ####
+# #### Tune storage size and retention based on data growth. ####
 # Postgres StatefulSet with persistent storage
 apiVersion: apps/v1
 kind: StatefulSet

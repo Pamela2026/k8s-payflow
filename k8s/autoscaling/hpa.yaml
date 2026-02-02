@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### HorizontalPodAutoscaler rules for key services. ####
+# #### Requires metrics-server to be installed. ####
 # HorizontalPodAutoscaler: scales the api-gateway Deployment based on CPU and memory utilization.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

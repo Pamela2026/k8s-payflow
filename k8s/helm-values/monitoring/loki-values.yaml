@@ -1,4 +1,7 @@
-# Minimal Loki settings for t3.medium
+# #### Purpose ####
+# #### Helm values for Loki log aggregation. ####
+# #### Controls retention and storage settings. ####
+# Minimal Loki settings
 deploymentMode: SingleBinary
 
 loki:

@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### PodDisruptionBudgets to keep critical services available. ####
+# #### Protects against voluntary disruptions (drains/evictions). ####
 # Maintain at least one pod available per service during disruptions
 # yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.28.0/policy-v1-poddisruptionbudget.json
 apiVersion: policy/v1

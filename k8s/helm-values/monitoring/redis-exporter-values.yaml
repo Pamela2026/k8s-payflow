@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Helm values for Redis exporter. ####
+# #### Scraped by Prometheus for cache metrics. ####
 # Redis exporter settings for payflow Redis
 redisAddress: redis-service.payflow.svc.cluster.local:6379
 

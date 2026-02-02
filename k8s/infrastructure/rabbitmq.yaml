@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### RabbitMQ StatefulSet and services for messaging. ####
+# #### Update credentials and persistence settings as needed. ####
 # RabbitMQ StatefulSet with management UI
 apiVersion: apps/v1
 kind: StatefulSet

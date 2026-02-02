@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Namespace-wide resource caps for the payflow namespace. ####
+# #### Prevents noisy neighbors and protects cluster capacity. ####
 # Namespace-wide caps to control resource usage
 apiVersion: v1
 kind: ResourceQuota

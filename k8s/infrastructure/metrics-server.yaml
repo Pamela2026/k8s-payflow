@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Metrics Server for CPU/memory metrics used by HPA. ####
+# #### Installs in kube-system with required RBAC. ####
 # Metrics Server manifests (required for HPA)
 apiVersion: v1
 kind: ServiceAccount

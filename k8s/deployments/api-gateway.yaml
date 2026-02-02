@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Deploys the API gateway that fronts all internal services. ####
+# #### Prometheus metrics are exposed from this container port. ####
 # API gateway deployment and health checks
 apiVersion: apps/v1
 kind: Deployment

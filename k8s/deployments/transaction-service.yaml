@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Deploys the transaction-service API in the payflow namespace. ####
+# #### Update image tags and resource settings here when releasing. ####
 # Transaction service deployment with DB/Redis/RabbitMQ wiring
 apiVersion: apps/v1
 kind: Deployment

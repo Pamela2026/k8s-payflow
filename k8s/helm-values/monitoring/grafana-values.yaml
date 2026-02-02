@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Helm values for Grafana dashboards and datasources. ####
+# #### Auto-provisions Prometheus and Loki sources. ####
 # Minimal Grafana settings
 replicas: 1
 
@@ -26,3 +29,117 @@ datasources:
       type: loki
       access: proxy
       url: http://payflow-loki.monitoring.svc.cluster.local:3100
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: default
+      orgId: 1
+      folder: "Payflow"
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    payflow-overview:
+      json: |
+        {
+          "id": null,
+          "title": "Payflow Overview",
+          "timezone": "browser",
+          "schemaVersion": 38,
+          "version": 1,
+          "refresh": "30s",
+          "tags": ["payflow", "kubernetes"],
+          "templating": {
+            "list": [
+              {
+                "name": "namespace",
+                "type": "query",
+                "datasource": "Prometheus",
+                "query": "label_values(kube_pod_info, namespace)",
+                "current": { "text": "payflow", "value": "payflow" }
+              }
+            ]
+          },
+          "panels": [
+            {
+              "type": "stat",
+              "title": "Pods Running",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kube_pod_status_phase{namespace=\\\"$namespace\\\",phase=\\\"Running\\\"})" }
+              ],
+              "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "Pods Pending",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kube_pod_status_phase{namespace=\\\"$namespace\\\",phase=\\\"Pending\\\"})" }
+              ],
+              "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "Restarts (1h)",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\\\"$namespace\\\"}[1h]))" }
+              ],
+              "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "Pods Failed",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kube_pod_status_phase{namespace=\\\"$namespace\\\",phase=\\\"Failed\\\"})" }
+              ],
+              "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 }
+            },
+            {
+              "type": "timeseries",
+              "title": "CPU Usage (cores)",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\\\"$namespace\\\",container!=\\\"\\\",pod!=\\\"\\\"}[5m]))" }
+              ],
+              "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
+            },
+            {
+              "type": "timeseries",
+              "title": "Memory Usage (bytes)",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(container_memory_working_set_bytes{namespace=\\\"$namespace\\\",container!=\\\"\\\",pod!=\\\"\\\"})" }
+              ],
+              "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
+            },
+            {
+              "type": "timeseries",
+              "title": "CPU Requests vs Limits (cores)",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kube_pod_container_resource_requests{namespace=\\\"$namespace\\\",resource=\\\"cpu\\\"})", "legendFormat": "requests" },
+                { "expr": "sum(kube_pod_container_resource_limits{namespace=\\\"$namespace\\\",resource=\\\"cpu\\\"})", "legendFormat": "limits" }
+              ],
+              "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 }
+            },
+            {
+              "type": "timeseries",
+              "title": "Memory Requests vs Limits (bytes)",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kube_pod_container_resource_requests{namespace=\\\"$namespace\\\",resource=\\\"memory\\\"})", "legendFormat": "requests" },
+                { "expr": "sum(kube_pod_container_resource_limits{namespace=\\\"$namespace\\\",resource=\\\"memory\\\"})", "legendFormat": "limits" }
+              ],
+              "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
+            }
+          ]
+        }
