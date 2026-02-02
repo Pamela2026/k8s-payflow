@@ -7,10 +7,10 @@ metadata:
 spec:
   hard:
     # Aggregate CPU/memory requests and limits
-    requests.cpu: "2"
-    requests.memory: 4Gi
-    limits.cpu: "4"
-    limits.memory: 8Gi
+    requests.cpu: "4"
+    requests.memory: 6Gi
+    limits.cpu: "8"
+    limits.memory: 12Gi
     # Object count ceilings
     pods: "15"
     secrets: "10"
