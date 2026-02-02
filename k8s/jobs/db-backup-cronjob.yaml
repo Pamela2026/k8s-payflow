@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Scheduled database backup job for Postgres. ####
+# #### Adjust schedule and retention to meet recovery goals. ####
 # Nightly PostgreSQL backup job that writes compressed dumps to a PVC and prunes old files
 apiVersion: batch/v1
 kind: CronJob

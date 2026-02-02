@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Helm values for Promtail log shipping to Loki. ####
+# #### Controls scraping labels and pipeline stages. ####
 # Minimal Promtail settings for t3.medium
 config:
   clients:

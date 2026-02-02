@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Deploys the frontend web UI served to end users. ####
+# #### Tune replicas and resources to match traffic. ####
 # Frontend deployment serving the web UI
 apiVersion: apps/v1
 kind: Deployment

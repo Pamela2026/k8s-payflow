@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Deploys the auth-service API (login/registration) in the payflow namespace. ####
+# #### Uses config/secret env vars for database and JWT settings. ####
 # Auth service deployment with DB/Redis/JWT wiring
 apiVersion: apps/v1
 kind: Deployment

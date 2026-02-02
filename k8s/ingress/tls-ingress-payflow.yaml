@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### TLS ingress for Payflow UI and APIs. ####
+# #### Requires a valid TLS secret and ingress controller. ####
 # TLS ingress routing for local dev domains
 apiVersion: networking.k8s.io/v1
 kind: Ingress

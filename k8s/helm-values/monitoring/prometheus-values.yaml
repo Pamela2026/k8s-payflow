@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Helm values for Prometheus server configuration. ####
+# #### Scrape config keeps only annotated services. ####
 # Minimal Prometheus settings
 alertmanager:
   enabled: false

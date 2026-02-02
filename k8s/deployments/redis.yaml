@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Deploys Redis used for caching and token/session data. ####
+# #### Ensure persistence and resource limits match workload needs. ####
 # Redis deployment for caching and session data
 apiVersion: apps/v1
 kind: Deployment

@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Default-deny network policy set with explicit allowlists. ####
+# #### Controls service-to-service and monitoring traffic. ####
 # NetworkPolicies for least-privilege traffic in the payflow namespace.
 # default-deny-all denies all ingress and egress by default.
 ---
@@ -327,6 +330,9 @@ spec:
         - podSelector:
             matchLabels:
               app: notification-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus-rabbitmq-exporter
       ports:
         - protocol: TCP
           port: 15672
@@ -384,6 +390,9 @@ spec:
         - podSelector:
             matchLabels:
               app: transaction-timeout-handler
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus-postgres-exporter
       ports:
         - protocol: TCP
           port: 5432
@@ -411,6 +420,9 @@ spec:
         - podSelector:
             matchLabels:
               app: transaction-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus-redis-exporter
       ports:
         - protocol: TCP
           port: 6379
@@ -435,6 +447,9 @@ spec:
         - podSelector:
             matchLabels:
               app: notification-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus-rabbitmq-exporter
       ports:
         - protocol: TCP
           port: 5672

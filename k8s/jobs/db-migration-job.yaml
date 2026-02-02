@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### One-off migration job to create/update database schema. ####
+# #### Safe to re-run when migrations change. ####
 # One-time Flyway migration job
 apiVersion: batch/v1
 kind: Job

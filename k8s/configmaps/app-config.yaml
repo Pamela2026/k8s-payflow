@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Centralized configuration shared by Payflow services. ####
+# #### Update service URLs and feature flags here. ####
 # Shared runtime configuration for services
 apiVersion: v1
 kind: ConfigMap

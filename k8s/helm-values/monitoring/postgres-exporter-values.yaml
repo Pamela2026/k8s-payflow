@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Helm values for Postgres exporter connectivity. ####
+# #### Ensure host/credentials match the Postgres service. ####
 # Postgres exporter settings for payflow DB
 config:
   datasource:

@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Periodic job that marks stale transactions as failed. ####
+# #### Schedule, TTL, and history limits control pod churn. ####
 # Periodic job to mark stale transactions as failed
 apiVersion: batch/v1
 kind: CronJob
@@ -7,10 +10,12 @@ metadata:
 spec:
   # Run every minute
   schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: 10800
       backoffLimit: 2
       template:
         metadata:

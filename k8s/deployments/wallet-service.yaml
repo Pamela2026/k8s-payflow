@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Deploys the wallet-service API for balances and transfers. ####
+# #### Adjust resource limits and env vars as load grows. ####
 # Wallet service deployment with DB/Redis wiring
 apiVersion: apps/v1
 kind: Deployment

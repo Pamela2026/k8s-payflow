@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Helm values for RabbitMQ exporter. ####
+# #### Prometheus scrapes this service for broker metrics. ####
 # RabbitMQ exporter settings for payflow RabbitMQ
 rabbitmq:
   url: http://rabbitmq-service.payflow.svc.cluster.local:15672

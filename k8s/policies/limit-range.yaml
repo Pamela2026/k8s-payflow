@@ -1,3 +1,6 @@
+# #### Purpose ####
+# #### Default/min/max resource constraints per container. ####
+# #### Keeps pods within safe resource envelopes. ####
 # Default and min/max resource limits per container
 apiVersion: v1
 kind: LimitRange
