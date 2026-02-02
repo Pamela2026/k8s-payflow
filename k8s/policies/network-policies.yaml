@@ -211,27 +211,27 @@ spec:
       ports:
         - protocol: TCP
           port: 3001
----
-# allow-wallet-to-transaction allows wallet-service ingress to transaction-service on TCP 3002.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-wallet-to-transaction
-  namespace: payflow
-spec:
-  podSelector:
-    matchLabels:
-      app: transaction-service
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: wallet-service
-      ports:
-        - protocol: TCP
-          port: 3002
+# ---
+# # allow-wallet-to-transaction allows wallet-service ingress to transaction-service on TCP 3002.
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: allow-wallet-to-transaction
+#   namespace: payflow
+# spec:
+#   podSelector:
+#     matchLabels:
+#       app: transaction-service
+#   policyTypes:
+#     - Ingress
+#   ingress:
+#     - from:
+#         - podSelector:
+#             matchLabels:
+#               app: wallet-service
+#       ports:
+#         - protocol: TCP
+#           port: 3002
 ---
 # services-ingress-from-api-gateway allows api-gateway to reach core services on their ports.
 apiVersion: networking.k8s.io/v1
