@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# HTTP INGRESS
+# ============================================
 # #### HTTP ingress rules for local/dev access. ####
 # #### Useful when TLS is not configured. ####
-# HTTP ingress routing for local dev domains
+# #### HTTP ingress routing for local dev domains ####
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -15,7 +17,7 @@ metadata:
     nginx.ingress.kubernetes.io/enable-cors: "true"
 spec:
   ingressClassName: public
-  # Host-based routing for frontend and API, with a hostless fallback for IP access
+  # #### Host-based routing for frontend and API, with a hostless fallback for IP access ####
   rules:
   - http:
       paths:

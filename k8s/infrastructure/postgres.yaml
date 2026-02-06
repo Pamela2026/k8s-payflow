@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# POSTGRES
+# ============================================
 # #### Postgres StatefulSet and service for the Payflow database. ####
 # #### Tune storage size and retention based on data growth. ####
-# Postgres StatefulSet with persistent storage
+# #### Postgres StatefulSet with persistent storage ####
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -25,7 +27,7 @@ spec:
         ports:
         - containerPort: 5432
         env:
-        # Database bootstrap settings
+        # #### Database bootstrap settings ####
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
@@ -45,14 +47,14 @@ spec:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
         resources:
-          # Heavier defaults for database workload
+          # #### Heavier defaults for database workload ####
           requests:
             cpu: "200m"
             memory: "512Mi"
           limits:
             cpu: "500m"
             memory: "1Gi"
-        # Exec probes ensure DB is ready before clients connect
+        # #### Exec probes ensure DB is ready before clients connect ####
         livenessProbe:
           exec:
             command:
@@ -77,7 +79,7 @@ spec:
   - metadata:
       name: postgres-storage
     spec:
-      # microk8s-hostpath from the storage addon
+      # #### microk8s-hostpath from the storage addon ####
       storageClassName: microk8s-hostpath
       accessModes: ["ReadWriteOnce"]
       resources:

@@ -1,15 +1,28 @@
-# #### Purpose ####
-# #### Helm values for RabbitMQ exporter. ####
+# ============================================
+# RABBITMQ EXPORTER HELM VALUES
+# ============================================
 # #### Prometheus scrapes this service for broker metrics. ####
-# RabbitMQ exporter settings for payflow RabbitMQ
+
+# ============================================
+# RABBITMQ CONNECTION
+# ============================================
+# #### Management API endpoint used by exporter to pull queue/exchange/node metrics. ####
 rabbitmq:
   url: http://rabbitmq-service.payflow.svc.cluster.local:15672
 
+# ============================================
+# SERVICE DISCOVERY ANNOTATIONS
+# ============================================
+# #### Enables Prometheus service discovery via standard scrape annotations. ####
 service:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9419"
 
+# ============================================
+# EXPORTER RESOURCES
+# ============================================
+# #### Exporter container CPU/memory envelope. ####
 resources:
   requests:
     cpu: 25m

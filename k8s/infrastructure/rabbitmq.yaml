@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# RABBITMQ
+# ============================================
 # #### RabbitMQ StatefulSet and services for messaging. ####
 # #### Update credentials and persistence settings as needed. ####
-# RabbitMQ StatefulSet with management UI
+# #### RabbitMQ StatefulSet with management UI ####
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -26,7 +28,7 @@ spec:
         - containerPort: 5672
         - containerPort: 15672
         env:
-        # Default RabbitMQ credentials
+        # #### Default RabbitMQ credentials ####
         - name: RABBITMQ_DEFAULT_USER
           valueFrom:
             secretKeyRef:
@@ -41,14 +43,14 @@ spec:
         - name: rabbitmq-data
           mountPath: /var/lib/rabbitmq
         resources:
-          # Heavier defaults for messaging workload
+          # #### Heavier defaults for messaging workload ####
           requests:
             cpu: "250m"
             memory: "600Mi"
           limits:
             cpu: "1000m"
             memory: "1Gi"
-        # Diagnostics for readiness/liveness
+        # #### Diagnostics for readiness/liveness ####
         readinessProbe:
           exec:
             command: ["rabbitmq-diagnostics", "-q", "ping"]
@@ -67,7 +69,7 @@ spec:
   - metadata:
       name: rabbitmq-data
     spec:
-      # microk8s-hostpath from the storage addon
+      # #### microk8s-hostpath from the storage addon ####
       storageClassName: microk8s-hostpath
       accessModes: ["ReadWriteOnce"]
       resources:

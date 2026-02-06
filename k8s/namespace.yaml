@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# NAMESPACE
+# ============================================
 # #### Creates the payflow namespace used to isolate all Payflow workloads. ####
 # #### Apply this before any namespaced resources. ####
-# Namespace to isolate all Payflow resources
+# #### Namespace to isolate all Payflow resources ####
 apiVersion: v1
 kind: Namespace
 metadata:

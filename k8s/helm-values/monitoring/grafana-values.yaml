@@ -1,21 +1,41 @@
-# #### Purpose ####
-# #### Helm values for Grafana dashboards and datasources. ####
-# #### Auto-provisions Prometheus and Loki sources. ####
-# Minimal Grafana settings
+# ============================================
+# GRAFANA HELM VALUES
+# ============================================
+# #### Auto-provisions Prometheus and Loki datasources plus dashboard-as-code payloads. ####
+
+# ============================================
+# GRAFANA REPLICAS
+# ============================================
+# #### Single Grafana pod keeps this deployment simple. Increase for HA if needed. ####
 replicas: 1
 
+# ============================================
+# GRAFANA PERSISTENCE
+# ============================================
+# #### Stores dashboards, users, and Grafana state on a PVC so restarts do not lose config. ####
 persistence:
   enabled: true
   size: 2Gi
+  # #### Explicit storage class for single-node hostPath clusters ####
+  storageClassName: microk8s-hostpath
 
+# ============================================
+# GRAFANA RESOURCES
+# ============================================
+# #### Baseline CPU/memory envelope for Grafana server pod. ####
 resources:
   requests:
-    cpu: 50m
-    memory: 128Mi
+    cpu: 25m
+    memory: 64Mi
   limits:
-    cpu: 200m
-    memory: 256Mi
+    cpu: 100m
+    memory: 128Mi
 
+# ============================================
+# DATASOURCES
+# ============================================
+# #### Provisioned at startup so users do not have to manually add Prometheus/Loki in UI. ####
+# #### Prometheus is default for metrics; Loki is used for logs panels. ####
 datasources:
   datasources.yaml:
     apiVersion: 1
@@ -30,6 +50,10 @@ datasources:
       access: proxy
       url: http://payflow-loki.monitoring.svc.cluster.local:3100
 
+# ============================================
+# DASHBOARD PROVIDERS
+# ============================================
+# #### Tells Grafana where to load dashboard JSON files from inside the pod. ####
 dashboardProviders:
   dashboardproviders.yaml:
     apiVersion: 1
@@ -43,6 +67,11 @@ dashboardProviders:
       options:
         path: /var/lib/grafana/dashboards/default
 
+# ============================================
+# DASHBOARD DEFINITIONS
+# ============================================
+# #### Dashboard-as-code payload provisioned at startup by the provider above. ####
+# #### Combines Kubernetes health/capacity, SLI/SLO panels, and Loki namespace logs. ####
 dashboards:
   default:
     payflow-overview:
@@ -140,6 +169,82 @@ dashboards:
                 { "expr": "sum(kube_pod_container_resource_limits{namespace=\\\"$namespace\\\",resource=\\\"memory\\\"})", "legendFormat": "limits" }
               ],
               "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
+            },
+            {
+              "type": "logs",
+              "title": "Namespace Logs (Loki)",
+              "description": "Recent logs from Loki scoped to the selected namespace.",
+              "datasource": "Loki",
+              "targets": [
+                { "expr": "{namespace=\\\"$namespace\\\"}" }
+              ],
+              "options": {
+                "showLabels": true,
+                "showTime": true,
+                "sortOrder": "Descending"
+              },
+              "gridPos": { "x": 0, "y": 32, "w": 24, "h": 10 }
+            },
+            {
+              "type": "stat",
+              "title": "Availability SLI (5m, %)",
+              "description": "Rolling 5-minute availability computed from HTTP error and total request rates.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "100 * (1 - (sum(payflow:http_requests_errors:rate5m{namespace=\\\"$namespace\\\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}), 0.001)))" }
+              ],
+              "gridPos": { "x": 0, "y": 20, "w": 6, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "Latency SLI <=500ms (5m, %)",
+              "description": "Percent of HTTP requests completed within 500ms over 5 minutes.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "100 * (sum(payflow:sli_latency_le_500ms:ratio5m{namespace=\\\"$namespace\\\"} * payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}), 0.001))" }
+              ],
+              "gridPos": { "x": 6, "y": 20, "w": 6, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "Error Budget Burn (1h)",
+              "description": "Burn-rate multiplier for a 99.9% availability SLO over a 1-hour window.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\\\"$namespace\\\"})" }
+              ],
+              "gridPos": { "x": 12, "y": 20, "w": 6, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "HTTP Traffic (rps)",
+              "description": "Total HTTP request throughput in requests per second over 5 minutes.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"})" }
+              ],
+              "gridPos": { "x": 18, "y": 20, "w": 6, "h": 4 }
+            },
+            {
+              "type": "timeseries",
+              "title": "Error Budget Burn (5m/1h)",
+              "description": "Fast and slow burn-rate trend lines for availability error budget consumption.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio5m{namespace=\\\"$namespace\\\"})", "legendFormat": "burn_5m" },
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\\\"$namespace\\\"})", "legendFormat": "burn_1h" }
+              ],
+              "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
+            },
+            {
+              "type": "timeseries",
+              "title": "HTTP Error Rate (%)",
+              "description": "Percent of 5xx responses across all HTTP traffic in the selected namespace.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "100 * (sum(payflow:http_requests_errors:rate5m{namespace=\\\"$namespace\\\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}), 0.001))", "legendFormat": "error_rate_pct" }
+              ],
+              "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
             }
           ]
         }

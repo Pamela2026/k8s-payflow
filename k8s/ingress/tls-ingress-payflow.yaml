@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# TLS INGRESS PAYFLOW
+# ============================================
 # #### TLS ingress for Payflow UI and APIs. ####
 # #### Requires a valid TLS secret and ingress controller. ####
-# TLS ingress routing for local dev domains
+# #### TLS ingress routing for local dev domains ####
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -12,7 +14,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: public
-  # TLS certificate reference for hostnames
+  # #### TLS certificate reference for hostnames ####
   tls:
   - hosts:
     - payflow.local

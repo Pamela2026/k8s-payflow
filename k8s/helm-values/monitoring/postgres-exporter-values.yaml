@@ -1,7 +1,12 @@
-# #### Purpose ####
-# #### Helm values for Postgres exporter connectivity. ####
-# #### Ensure host/credentials match the Postgres service. ####
-# Postgres exporter settings for payflow DB
+# ============================================
+# POSTGRES EXPORTER HELM VALUES
+# ============================================
+# #### Ensure host/credentials match the in-cluster Postgres service. ####
+
+# ============================================
+# DATASOURCE CONFIG
+# ============================================
+# #### Connection details used by exporter to query PostgreSQL stats views. ####
 config:
   datasource:
     host: postgres-service.payflow.svc.cluster.local
@@ -9,11 +14,19 @@ config:
     database: payflow
     sslmode: disable
 
+# ============================================
+# SERVICE DISCOVERY ANNOTATIONS
+# ============================================
+# #### Enables Prometheus service discovery via standard scrape annotations. ####
 service:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9187"
 
+# ============================================
+# EXPORTER RESOURCES
+# ============================================
+# #### Exporter container CPU/memory envelope. ####
 resources:
   requests:
     cpu: 50m

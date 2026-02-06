@@ -1,20 +1,24 @@
-# #### Purpose ####
+# ============================================
+# TRANSACTION TIMEOUT HANDLER
+# ============================================
 # #### Periodic job that marks stale transactions as failed. ####
 # #### Schedule, TTL, and history limits control pod churn. ####
-# Periodic job to mark stale transactions as failed
+# #### Periodic job to mark stale transactions as failed ####
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: transaction-timeout-handler
   namespace: payflow
 spec:
-  # Run every minute
+  # #### Run every minute ####
   schedule: "*/1 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
+      # #### Kill stuck jobs after 5 minutes to avoid blocking new runs ####
+      activeDeadlineSeconds: 300
       ttlSecondsAfterFinished: 10800
       backoffLimit: 2
       template:
@@ -26,8 +30,15 @@ spec:
           containers:
           - name: timeout-handler
             image: postgres:15
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                cpu: 50m
+                memory: 64Mi
             env:
-            # Database connection inputs
+            # #### Database connection inputs ####
             - name: DB_HOST
               valueFrom:
                 configMapKeyRef:
@@ -58,7 +69,7 @@ spec:
             - -c
             args:
             - |
-              # Mark pending transactions that exceeded the timeout
+              # #### Mark pending transactions that exceeded the timeout ####
               set -e
               export PGPASSWORD="$DB_PASSWORD"
               psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# #### Purpose ####
+# ============================================
+# RENDER DB MIGRATIONS CONFIGMAP
+# ============================================
 # #### Renders SQL migrations into a ConfigMap manifest for Kubernetes. ####
 # #### Reads payflow-wallet/migrations and writes k8s/configmaps/db-migrations.yaml. ####
 set -euo pipefail
