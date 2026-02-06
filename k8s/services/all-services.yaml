@@ -1,10 +1,12 @@
-# #### Purpose ####
+# ============================================
+# ALL SERVICES
+# ============================================
 # #### Service definitions for every Payflow workload. ####
 # #### Includes Prometheus scrape annotations where applicable. ####
-# Service definitions for Payflow workloads.
-# Each Service exposes one workload inside the payflow namespace.
+# #### Service definitions for Payflow workloads. ####
+# #### Each Service exposes one workload inside the payflow namespace. ####
 
-# frontend exposes the web UI externally via LoadBalancer on port 80.
+# #### frontend exposes the web UI externally via LoadBalancer on port 80. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -18,7 +20,7 @@ spec:
     targetPort: 80
   type: LoadBalancer
 ---
-# api-gateway exposes the gateway internally; maps port 80 to container port 3000.
+# #### api-gateway exposes the gateway internally; maps port 80 to container port 3000. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -36,7 +38,7 @@ spec:
     targetPort: 3000
   type: ClusterIP
 ---
-# auth-service exposes the auth API internally on port 3004.
+# #### auth-service exposes the auth API internally on port 3004. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -54,7 +56,7 @@ spec:
     targetPort: 3004
   type: ClusterIP
 ---
-# wallet-service exposes the wallet API internally on port 3001.
+# #### wallet-service exposes the wallet API internally on port 3001. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -72,7 +74,7 @@ spec:
     targetPort: 3001
   type: ClusterIP
 ---
-# transaction-service exposes the transaction API internally on port 3002.
+# #### transaction-service exposes the transaction API internally on port 3002. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -90,7 +92,7 @@ spec:
     targetPort: 3002
   type: ClusterIP
 ---
-# notification-service exposes the notification API internally on port 3003.
+# #### notification-service exposes the notification API internally on port 3003. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -108,7 +110,7 @@ spec:
     targetPort: 3003
   type: ClusterIP
 ---
-# postgres-service is headless to provide stable DNS for StatefulSet pods.
+# #### postgres-service is headless to provide stable DNS for StatefulSet pods. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -122,7 +124,7 @@ spec:
     targetPort: 5432
   clusterIP: None
 ---
-# redis-service exposes Redis internally on port 6379.
+# #### redis-service exposes Redis internally on port 6379. ####
 apiVersion: v1
 kind: Service
 metadata:
@@ -136,7 +138,7 @@ spec:
     targetPort: 6379
   type: ClusterIP
 ---
-# rabbitmq-service is headless for StatefulSet, exposing AMQP and management ports.
+# #### rabbitmq-service is headless for StatefulSet, exposing AMQP and management ports. ####
 apiVersion: v1
 kind: Service
 metadata:

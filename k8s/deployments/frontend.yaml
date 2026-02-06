@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# FRONTEND
+# ============================================
 # #### Deploys the frontend web UI served to end users. ####
 # #### Tune replicas and resources to match traffic. ####
-# Frontend deployment serving the web UI
+# #### Frontend deployment serving the web UI ####
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,24 +30,24 @@ spec:
         ports:
         - containerPort: 80
         env:
-        # Nginx proxy target inside the cluster
+        # #### Nginx proxy target inside the cluster ####
         - name: API_GATEWAY_URL
           valueFrom:
             configMapKeyRef:
               name: payflow-config
               key: API_GATEWAY_URL
-        # Browser should hit same-origin and let nginx proxy /api
+        # #### Browser should hit same-origin and let nginx proxy /api ####
         - name: REACT_APP_API_URL
           value: /api
         resources:
-          # Conservative defaults for single-node clusters
+          # #### Conservative defaults for single-node clusters ####
           requests:
             memory: "64Mi"
             cpu: "50m"
           limits:
             memory: "128Mi"
             cpu: "100m"
-        # Probes ensure routing only when the UI is ready
+        # #### Probes ensure routing only when the UI is ready ####
         livenessProbe:
           httpGet:
             path: /

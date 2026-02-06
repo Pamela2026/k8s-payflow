@@ -1,14 +1,27 @@
-# #### Purpose ####
-# #### Helm values for Redis exporter. ####
-# #### Scraped by Prometheus for cache metrics. ####
-# Redis exporter settings for payflow Redis
+# ============================================
+# REDIS EXPORTER HELM VALUES
+# ============================================
+# #### Scraped by Prometheus for cache and Redis command metrics. ####
+
+# ============================================
+# REDIS CONNECTION
+# ============================================
+# #### In-cluster Redis endpoint exporter connects to for INFO and command stats. ####
 redisAddress: redis-service.payflow.svc.cluster.local:6379
 
+# ============================================
+# SERVICE DISCOVERY ANNOTATIONS
+# ============================================
+# #### Enables Prometheus service discovery via standard scrape annotations. ####
 service:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9121"
 
+# ============================================
+# EXPORTER RESOURCES
+# ============================================
+# #### Exporter container CPU/memory envelope. ####
 resources:
   requests:
     cpu: 25m

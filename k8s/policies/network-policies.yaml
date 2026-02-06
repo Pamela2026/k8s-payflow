@@ -1,8 +1,10 @@
-# #### Purpose ####
+# ============================================
+# NETWORK POLICIES
+# ============================================
 # #### Default-deny network policy set with explicit allowlists. ####
 # #### Controls service-to-service and monitoring traffic. ####
-# NetworkPolicies for least-privilege traffic in the payflow namespace.
-# default-deny-all denies all ingress and egress by default.
+# #### NetworkPolicies for least-privilege traffic in the payflow namespace. ####
+# #### default-deny-all denies all ingress and egress by default. ####
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -15,7 +17,7 @@ spec:
     - Ingress
     - Egress
 ---
-# allow-dns-egress allows all pods to reach kube-dns/CoreDNS on TCP/UDP 53.
+# #### allow-dns-egress allows all pods to reach kube-dns/CoreDNS on TCP/UDP 53. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -43,7 +45,7 @@ spec:
         - protocol: TCP
           port: 53
 ---
-# allow-frontend-ingress allows inbound HTTP (80) to frontend pods from any source.
+# #### allow-frontend-ingress allows inbound HTTP (80) to frontend pods from any source. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -60,7 +62,7 @@ spec:
         - protocol: TCP
           port: 80
 ---
-# allow-api-gateway-ingress allows inbound traffic to api-gateway on TCP 3000 from any source.
+# #### allow-api-gateway-ingress allows inbound traffic to api-gateway on TCP 3000 from any source. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -77,7 +79,7 @@ spec:
         - protocol: TCP
           port: 3000
 ---
-# allow-monitoring-scrape permits Prometheus in the monitoring namespace to scrape metrics endpoints.
+# #### allow-monitoring-scrape permits Prometheus in the monitoring namespace to scrape metrics endpoints. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -110,7 +112,7 @@ spec:
         - protocol: TCP
           port: 9419
 ---
-# frontend-egress-to-api-gateway allows frontend pods to reach api-gateway on TCP 3000.
+# #### frontend-egress-to-api-gateway allows frontend pods to reach api-gateway on TCP 3000. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -131,7 +133,7 @@ spec:
         - protocol: TCP
           port: 3000
 ---
-# api-gateway-egress-to-services allows api-gateway to call internal services on their ports.
+# #### api-gateway-egress-to-services allows api-gateway to call internal services on their ports. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -173,7 +175,7 @@ spec:
         - protocol: TCP
           port: 3003
 ---
-# allow-transaction-to-wallet allows transaction-service ingress to wallet-service on TCP 3001.
+# #### allow-transaction-to-wallet allows transaction-service ingress to wallet-service on TCP 3001. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -194,7 +196,7 @@ spec:
         - protocol: TCP
           port: 3001
 ---
-# transaction-egress-to-wallet allows transaction-service egress to wallet-service on TCP 3001.
+# #### transaction-egress-to-wallet allows transaction-service egress to wallet-service on TCP 3001. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -214,14 +216,14 @@ spec:
       ports:
         - protocol: TCP
           port: 3001
-# ---
-# # allow-wallet-to-transaction allows wallet-service ingress to transaction-service on TCP 3002.
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
+# #### --- ####
+# #### # allow-wallet-to-transaction allows wallet-service ingress to transaction-service on TCP 3002. ####
+# #### apiVersion: networking.k8s.io/v1 ####
+# #### kind: NetworkPolicy ####
+# #### metadata: ####
 #   name: allow-wallet-to-transaction
 #   namespace: payflow
-# spec:
+# #### spec: ####
 #   podSelector:
 #     matchLabels:
 #       app: transaction-service
@@ -236,7 +238,7 @@ spec:
 #         - protocol: TCP
 #           port: 3002
 ---
-# services-ingress-from-api-gateway allows api-gateway to reach core services on their ports.
+# #### services-ingress-from-api-gateway allows api-gateway to reach core services on their ports. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -269,7 +271,7 @@ spec:
         - protocol: TCP
           port: 3003
 ---
-# services-egress-to-infra allows core services to reach postgres/redis/rabbitmq.
+# #### services-egress-to-infra allows core services to reach postgres/redis/rabbitmq. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -310,7 +312,7 @@ spec:
         - protocol: TCP
           port: 5672
 ---
-# rabbitmq-management-from-services allows selected services to access RabbitMQ management (15672).
+# #### rabbitmq-management-from-services allows selected services to access RabbitMQ management (15672). ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -337,7 +339,7 @@ spec:
         - protocol: TCP
           port: 15672
 ---
-# services-egress-to-rabbitmq-management allows transaction-service to egress to RabbitMQ management.
+# #### services-egress-to-rabbitmq-management allows transaction-service to egress to RabbitMQ management. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -358,7 +360,7 @@ spec:
         - protocol: TCP
           port: 15672
 ---
-# postgres-ingress-from-services allows services and jobs to access Postgres on 5432.
+# #### postgres-ingress-from-services allows services and jobs to access Postgres on 5432. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -397,7 +399,7 @@ spec:
         - protocol: TCP
           port: 5432
 ---
-# redis-ingress-from-services allows services to access Redis on 6379.
+# #### redis-ingress-from-services allows services to access Redis on 6379. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -427,7 +429,7 @@ spec:
         - protocol: TCP
           port: 6379
 ---
-# rabbitmq-ingress-from-services allows services to access RabbitMQ on 5672.
+# #### rabbitmq-ingress-from-services allows services to access RabbitMQ on 5672. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -454,7 +456,7 @@ spec:
         - protocol: TCP
           port: 5672
 ---
-# jobs-egress-to-postgres allows job/cronjob pods to access Postgres on 5432.
+# #### jobs-egress-to-postgres allows job/cronjob pods to access Postgres on 5432. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

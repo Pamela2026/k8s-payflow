@@ -1,14 +1,16 @@
-# #### Purpose ####
+# ============================================
+# DB MIGRATION JOB
+# ============================================
 # #### One-off migration job to create/update database schema. ####
 # #### Safe to re-run when migrations change. ####
-# One-time Flyway migration job
+# #### One-time Flyway migration job ####
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: payflow-db-migration
   namespace: payflow
 spec:
-  # Clean up after completion
+  # #### Clean up after completion ####
   ttlSecondsAfterFinished: 3600
   backoffLimit: 3
   template:
@@ -21,7 +23,7 @@ spec:
       - name: db-migration
         image: flyway/flyway:9.22.3
         env:
-        # Database connection inputs
+        # #### Database connection inputs ####
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:
@@ -56,7 +58,7 @@ spec:
         - -c
         args:
         - |
-          # Build Flyway JDBC URL and apply migrations
+          # #### Build Flyway JDBC URL and apply migrations ####
           set -e
           export FLYWAY_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
           export FLYWAY_USER="$DB_USER"
@@ -77,6 +79,6 @@ spec:
           readOnly: true
       volumes:
       - name: db-migrations
-        # SQL scripts sourced from ConfigMap
+        # #### SQL scripts sourced from ConfigMap ####
         configMap:
           name: payflow-db-migrations

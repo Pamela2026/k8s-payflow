@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# RESOURCE QUOTAS
+# ============================================
 # #### Namespace-wide resource caps for the payflow namespace. ####
 # #### Prevents noisy neighbors and protects cluster capacity. ####
-# Namespace-wide caps to control resource usage
+# #### Namespace-wide caps to control resource usage ####
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -9,11 +11,11 @@ metadata:
   namespace: payflow
 spec:
   hard:
-    # Aggregate CPU/memory requests and limits
+    # #### Aggregate CPU/memory requests and limits ####
     requests.cpu: "4"
     requests.memory: 6Gi
     limits.cpu: "8"
     limits.memory: 12Gi
-    # Object count ceilings
+    # #### Object count ceilings ####
     pods: "15"
     secrets: "10"

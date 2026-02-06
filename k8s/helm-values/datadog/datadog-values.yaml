@@ -1,0 +1,64 @@
+# ============================================
+# DATADOG LAB HELM VALUES
+# ============================================
+# #### Isolated Datadog config for learning/testing without changing existing monitoring stack. ####
+
+# ============================================
+# DATADOG API KEYS
+# ============================================
+# #### Keep keys in a Kubernetes Secret; do not hardcode them in Git. ####
+datadog:
+  apiKeyExistingSecret: datadog-keys
+  appKeyExistingSecret: datadog-keys
+
+  # #### Use the US Datadog site by default. Change to datadoghq.eu if needed. ####
+  site: datadoghq.com
+
+  # #### Tag everything from this install so dashboards/queries stay isolated. ####
+  tags:
+  - env:lab
+  - stack:datadog-lab
+  - project:payflow
+
+  # #### Collect kube resource metrics without external kube-state-metrics dependency. ####
+  kubeStateMetricsCore:
+    enabled: true
+
+  # #### Container log collection for namespace-level filtering in Datadog Logs Explorer. ####
+  logs:
+    enabled: true
+    containerCollectAll: true
+
+  # #### APM disabled by default for first-pass monitoring lab. ####
+  apm:
+    enabled: false
+
+# ============================================
+# AGENT RUNTIME
+# ============================================
+# #### Datadog node agent runs as DaemonSet. Keep requests light for test clusters. ####
+agents:
+  containers:
+    agent:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 300m
+          memory: 512Mi
+
+# ============================================
+# CLUSTER AGENT
+# ============================================
+# #### Enabled for metadata and cluster-level features. ####
+clusterAgent:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi

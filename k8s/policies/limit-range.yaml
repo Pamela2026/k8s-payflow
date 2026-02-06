@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# LIMIT RANGE
+# ============================================
 # #### Default/min/max resource constraints per container. ####
 # #### Keeps pods within safe resource envelopes. ####
-# Default and min/max resource limits per container
+# #### Default and min/max resource limits per container ####
 apiVersion: v1
 kind: LimitRange
 metadata:
@@ -10,14 +12,14 @@ metadata:
 spec:
   limits:
   - type: Container
-    # Defaults applied when requests/limits are omitted
+    # #### Defaults applied when requests/limits are omitted ####
     default:
       cpu: 500m
       memory: 512Mi
     defaultRequest:
       cpu: 100m
       memory: 128Mi
-    # Hard boundaries for container sizing
+    # #### Hard boundaries for container sizing ####
     min:
       cpu: 25m
       memory: 48Mi

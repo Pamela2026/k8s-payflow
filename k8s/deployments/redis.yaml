@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# REDIS
+# ============================================
 # #### Deploys Redis used for caching and token/session data. ####
 # #### Ensure persistence and resource limits match workload needs. ####
-# Redis deployment for caching and session data
+# #### Redis deployment for caching and session data ####
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,7 +30,7 @@ spec:
         ports:
         - containerPort: 6379
 
-        # Redis runtime options
+        # #### Redis runtime options ####
 
         args:
           - "--appendonly"
@@ -39,7 +41,7 @@ spec:
           mountPath: /data
 
         resources:
-          # Conservative defaults for single-node clusters
+          # #### Conservative defaults for single-node clusters ####
           requests:
             memory: "64Mi"
             cpu: "50m"
@@ -47,7 +49,7 @@ spec:
             memory: "256Mi"
             cpu: "200m"
 
-        # Simple ping probes for readiness/liveness
+        # #### Simple ping probes for readiness/liveness ####
         livenessProbe:
           exec:
             command:
@@ -66,5 +68,5 @@ spec:
 
       volumes:
       - name: redis-data
-        # Ephemeral storage for dev (swap to PVC for persistence)
+        # #### Ephemeral storage for dev (swap to PVC for persistence) ####
         emptyDir: {}

@@ -1,13 +1,26 @@
-# #### Purpose ####
-# #### Helm values for Prometheus server configuration. ####
-# #### Scrape config keeps only annotated services. ####
-# Minimal Prometheus settings
+# ============================================
+# PROMETHEUS HELM VALUES
+# ============================================
+# #### Scrape config keeps only explicitly annotated services. ####
+
+# ============================================
+# ALERTMANAGER (DISABLED)
+# ============================================
+# #### Disabled in this chart; use external alerting stack if required. ####
 alertmanager:
   enabled: false
 
+# ============================================
+# PUSHGATEWAY (DISABLED)
+# ============================================
+# #### Disabled because workloads are expected to be scraped directly. ####
 pushgateway:
   enabled: false
 
+# ============================================
+# KUBE-STATE-METRICS
+# ============================================
+# #### Collects Kubernetes object-state metrics (deployments, pods, requests/limits, etc.). ####
 kubeStateMetrics:
   enabled: true
   resources:
@@ -18,6 +31,10 @@ kubeStateMetrics:
       cpu: 200m
       memory: 256Mi
 
+# ============================================
+# NODE EXPORTER
+# ============================================
+# #### Collects node-level host metrics (CPU, memory, filesystem, network). ####
 nodeExporter:
   enabled: true
   resources:
@@ -28,11 +45,17 @@ nodeExporter:
       cpu: 200m
       memory: 128Mi
 
+# ============================================
+# PROMETHEUS SERVER
+# ============================================
+# #### Core runtime settings including retention, storage, and scrape/eval intervals. ####
 server:
   retention: "2d"
+  # #### Persists TSDB data so pod restarts do not wipe metrics history. ####
   persistentVolume:
     enabled: true
     size: 5Gi
+  # #### CPU/memory envelope for Prometheus query + scrape workload. ####
   resources:
     requests:
       cpu: 200m
@@ -40,12 +63,22 @@ server:
     limits:
       cpu: 400m
       memory: 1Gi
+  # #### Default scrape and rule evaluation cadence. ####
   global:
     scrape_interval: 60s
     evaluation_interval: 60s
-  # Keep only services explicitly annotated with prometheus.io/scrape=true
+  # ============================================
+  # #### SERVER FILES (INLINE CONFIG) ####
+  # ============================================
+  # #### Inline Prometheus config files packaged into the chart ConfigMap. ####
+  # #### This deployment scrapes only services that explicitly opt in via annotations. ####
   serverFiles:
     prometheus.yml:
+      # #### Loads custom SLI/SLO recording and alerting rules from this same ConfigMap. ####
+      rule_files:
+      - /etc/config/recording_rules.yml
+      - /etc/config/alerting_rules.yml
+      # #### Kubernetes endpoint discovery + relabel pipeline for annotated service scraping. ####
       scrape_configs:
       - job_name: "kubernetes-service-endpoints"
         kubernetes_sd_configs:
@@ -75,3 +108,133 @@ server:
         - source_labels: [__meta_kubernetes_service_name]
           action: replace
           target_label: service
+    # ============================================
+    # #### RECORDING RULES ####
+    # ============================================
+    # #### Normalize current HTTP metrics into reusable SLI/SLO series. ####
+    recording_rules.yml:
+      groups:
+      - name: payflow-sli-recording
+        interval: 1m
+        rules:
+        # #### Prefer explicit request counter; fallback to histogram count where needed. ####
+        - record: payflow:http_requests:rate5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total[5m])
+            )
+            or
+            sum by (namespace, service) (
+              rate(http_request_duration_seconds_count[5m])
+            )
+        # #### Uses the same counter/histogram strategy as total request rate. ####
+        - record: payflow:http_requests_errors:rate5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total{status_code=~"5.."}[5m])
+            )
+            or
+            sum by (namespace, service) (
+              rate(http_request_duration_seconds_count{status_code=~"5.."}[5m])
+            )
+        # #### Same throughput series over a longer window for slow-burn calculations. ####
+        - record: payflow:http_requests:rate1h
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total[1h])
+            )
+            or
+            sum by (namespace, service) (
+              rate(http_request_duration_seconds_count[1h])
+            )
+        # #### Same error series over a longer window for slow-burn calculations. ####
+        - record: payflow:http_requests_errors:rate1h
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total{status_code=~"5.."}[1h])
+            )
+            or
+            sum by (namespace, service) (
+              rate(http_request_duration_seconds_count{status_code=~"5.."}[1h])
+            )
+        # #### Proportion of requests served in <= 500ms over 5 minutes. ####
+        - record: payflow:sli_latency_le_500ms:ratio5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_request_duration_seconds_bucket{le="0.5"}[5m])
+            )
+            /
+            clamp_min(
+              sum by (namespace, service) (
+                rate(http_request_duration_seconds_count[5m])
+              ),
+              0.001
+            )
+        # #### Error budget burn for 99.9% availability objective (budget = 0.001). ####
+        - record: payflow:slo_error_budget_burn:ratio5m
+          expr: |
+            (
+              payflow:http_requests_errors:rate5m
+              /
+              clamp_min(payflow:http_requests:rate5m, 0.001)
+            ) / 0.001
+        # #### Long-window burn rate used for slow-burn alerting. ####
+        - record: payflow:slo_error_budget_burn:ratio1h
+          expr: |
+            (
+              payflow:http_requests_errors:rate1h
+              /
+              clamp_min(payflow:http_requests:rate1h, 0.001)
+            ) / 0.001
+    # ============================================
+    # #### ALERTING RULES ####
+    # ============================================
+    # #### Evaluate the recorded SLI/SLO series. ####
+    alerting_rules.yml:
+      groups:
+      - name: payflow-slo-alerting
+        rules:
+        # #### Multi-window burn alert catches acute error-budget consumption. ####
+        - alert: PayflowAvailabilityErrorBudgetBurnHigh
+          expr: |
+            sum by (namespace) (payflow:slo_error_budget_burn:ratio5m) > 14
+            and
+            sum by (namespace) (payflow:slo_error_budget_burn:ratio1h) > 14
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High SLO burn rate in namespace {{ $labels.namespace }}"
+            description: "Availability error budget burn is high for both 5m and 1h windows."
+        # #### Alerts when 1h availability stays below 99.9% target. ####
+        - alert: PayflowAvailabilitySLIBelowTarget
+          expr: |
+            (
+              1 - (
+                sum by (namespace) (payflow:http_requests_errors:rate1h)
+                /
+                clamp_min(sum by (namespace) (payflow:http_requests:rate1h), 0.001)
+              )
+            ) < 0.999
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Availability SLI below 99.9% in namespace {{ $labels.namespace }}"
+            description: "The 1h rolling availability is below the SLO target."
+        # #### Alerts when <=500ms success ratio drops below 95%. ####
+        - alert: PayflowLatencySLIBelowTarget
+          expr: |
+            (
+              sum by (namespace) (
+                payflow:sli_latency_le_500ms:ratio5m * payflow:http_requests:rate5m
+              )
+              /
+              clamp_min(sum by (namespace) (payflow:http_requests:rate5m), 0.001)
+            ) < 0.95
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Latency SLI below 95% in namespace {{ $labels.namespace }}"
+            description: "Less than 95% of requests are <= 500ms over the last 5 minutes."

@@ -1,7 +1,9 @@
-# #### Purpose ####
+# ============================================
+# POD DISRUPTION BUDGETS
+# ============================================
 # #### PodDisruptionBudgets to keep critical services available. ####
 # #### Protects against voluntary disruptions (drains/evictions). ####
-# Maintain at least one pod available per service during disruptions
+# #### Maintain at least one pod available per service during disruptions ####
 # yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.28.0/policy-v1-poddisruptionbudget.json
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -14,7 +16,7 @@ spec:
     matchLabels:
       app: api-gateway
 ---
-# PDB for auth-service
+# #### PDB for auth-service ####
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -26,7 +28,7 @@ spec:
     matchLabels:
       app: auth-service
 ---
-# PDB for wallet-service
+# #### PDB for wallet-service ####
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -38,7 +40,7 @@ spec:
     matchLabels:
       app: wallet-service
 ---
-# PDB for transaction-service
+# #### PDB for transaction-service ####
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -50,7 +52,7 @@ spec:
     matchLabels:
       app: transaction-service
 ---
-# PDB for notification-service
+# #### PDB for notification-service ####
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -62,7 +64,7 @@ spec:
     matchLabels:
       app: notification-service
 ---
-# PDB for frontend
+# #### PDB for frontend ####
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

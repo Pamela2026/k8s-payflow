@@ -1,11 +1,20 @@
-# #### Purpose ####
-# #### Helm values for Promtail log shipping to Loki. ####
-# #### Controls scraping labels and pipeline stages. ####
-# Minimal Promtail settings for t3.medium
+# ============================================
+# PROMTAIL HELM VALUES
+# ============================================
+# #### Controls how node agents ship logs to Loki. ####
+
+# ============================================
+# LOKI CLIENT CONFIG
+# ============================================
+# #### Defines where Promtail pushes logs. This URL must match the in-cluster Loki service endpoint. ####
 config:
   clients:
   - url: http://payflow-loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
 
+# ============================================
+# PROMTAIL RESOURCES
+# ============================================
+# #### Resource requests/limits for the DaemonSet agents collecting node/pod logs. ####
 resources:
   requests:
     cpu: 50m
