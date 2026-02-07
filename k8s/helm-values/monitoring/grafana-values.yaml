@@ -101,7 +101,7 @@ dashboards:
               "title": "Pods Running",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(kube_pod_status_phase{namespace=\\\"$namespace\\\",phase=\\\"Running\\\"})" }
+                { "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Running\"})" }
               ],
               "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 }
             },
@@ -110,7 +110,7 @@ dashboards:
               "title": "Pods Pending",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(kube_pod_status_phase{namespace=\\\"$namespace\\\",phase=\\\"Pending\\\"})" }
+                { "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Pending\"})" }
               ],
               "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 }
             },
@@ -119,7 +119,7 @@ dashboards:
               "title": "Restarts (1h)",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\\\"$namespace\\\"}[1h]))" }
+                { "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\"}[1h]))" }
               ],
               "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 }
             },
@@ -128,7 +128,7 @@ dashboards:
               "title": "Pods Failed",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(kube_pod_status_phase{namespace=\\\"$namespace\\\",phase=\\\"Failed\\\"})" }
+                { "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Failed\"})" }
               ],
               "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 }
             },
@@ -137,7 +137,7 @@ dashboards:
               "title": "CPU Usage (cores)",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\\\"$namespace\\\",container!=\\\"\\\",pod!=\\\"\\\"}[5m]))" }
+                { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]))" }
               ],
               "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
             },
@@ -146,7 +146,7 @@ dashboards:
               "title": "Memory Usage (bytes)",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(container_memory_working_set_bytes{namespace=\\\"$namespace\\\",container!=\\\"\\\",pod!=\\\"\\\"})" }
+                { "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"})" }
               ],
               "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
             },
@@ -155,8 +155,8 @@ dashboards:
               "title": "CPU Requests vs Limits (cores)",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(kube_pod_container_resource_requests{namespace=\\\"$namespace\\\",resource=\\\"cpu\\\"})", "legendFormat": "requests" },
-                { "expr": "sum(kube_pod_container_resource_limits{namespace=\\\"$namespace\\\",resource=\\\"cpu\\\"})", "legendFormat": "limits" }
+                { "expr": "sum(kube_pod_container_resource_requests{namespace=\"$namespace\",resource=\"cpu\"})", "legendFormat": "requests" },
+                { "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"cpu\"})", "legendFormat": "limits" }
               ],
               "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 }
             },
@@ -165,8 +165,8 @@ dashboards:
               "title": "Memory Requests vs Limits (bytes)",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(kube_pod_container_resource_requests{namespace=\\\"$namespace\\\",resource=\\\"memory\\\"})", "legendFormat": "requests" },
-                { "expr": "sum(kube_pod_container_resource_limits{namespace=\\\"$namespace\\\",resource=\\\"memory\\\"})", "legendFormat": "limits" }
+                { "expr": "sum(kube_pod_container_resource_requests{namespace=\"$namespace\",resource=\"memory\"})", "legendFormat": "requests" },
+                { "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"memory\"})", "legendFormat": "limits" }
               ],
               "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
             },
@@ -176,7 +176,7 @@ dashboards:
               "description": "Recent logs from Loki scoped to the selected namespace.",
               "datasource": "Loki",
               "targets": [
-                { "expr": "{namespace=\\\"$namespace\\\"}" }
+                { "expr": "{namespace=\"$namespace\"}" }
               ],
               "options": {
                 "showLabels": true,
@@ -191,7 +191,7 @@ dashboards:
               "description": "Rolling 5-minute availability computed from HTTP error and total request rates.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "100 * (1 - (sum(payflow:http_requests_errors:rate5m{namespace=\\\"$namespace\\\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}), 0.001)))" }
+                { "expr": "100 * (1 - (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001)))" }
               ],
               "gridPos": { "x": 0, "y": 20, "w": 6, "h": 4 }
             },
@@ -201,7 +201,7 @@ dashboards:
               "description": "Percent of HTTP requests completed within 500ms over 5 minutes.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "100 * (sum(payflow:sli_latency_le_500ms:ratio5m{namespace=\\\"$namespace\\\"} * payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}), 0.001))" }
+                { "expr": "100 * (sum(payflow:sli_latency_le_500ms:ratio5m{namespace=\"$namespace\"} * payflow:http_requests:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001))" }
               ],
               "gridPos": { "x": 6, "y": 20, "w": 6, "h": 4 }
             },
@@ -211,7 +211,7 @@ dashboards:
               "description": "Burn-rate multiplier for a 99.9% availability SLO over a 1-hour window.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\\\"$namespace\\\"})" }
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"})" }
               ],
               "gridPos": { "x": 12, "y": 20, "w": 6, "h": 4 }
             },
@@ -221,7 +221,7 @@ dashboards:
               "description": "Total HTTP request throughput in requests per second over 5 minutes.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"})" }
+                { "expr": "sum(payflow:http_requests:rate5m{namespace=\"$namespace\"})" }
               ],
               "gridPos": { "x": 18, "y": 20, "w": 6, "h": 4 }
             },
@@ -231,8 +231,8 @@ dashboards:
               "description": "Fast and slow burn-rate trend lines for availability error budget consumption.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(payflow:slo_error_budget_burn:ratio5m{namespace=\\\"$namespace\\\"})", "legendFormat": "burn_5m" },
-                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\\\"$namespace\\\"})", "legendFormat": "burn_1h" }
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio5m{namespace=\"$namespace\"})", "legendFormat": "burn_5m" },
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"})", "legendFormat": "burn_1h" }
               ],
               "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
             },
@@ -242,7 +242,7 @@ dashboards:
               "description": "Percent of 5xx responses across all HTTP traffic in the selected namespace.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "100 * (sum(payflow:http_requests_errors:rate5m{namespace=\\\"$namespace\\\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\\\"$namespace\\\"}), 0.001))", "legendFormat": "error_rate_pct" }
+                { "expr": "100 * (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001))", "legendFormat": "error_rate_pct" }
               ],
               "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
             }

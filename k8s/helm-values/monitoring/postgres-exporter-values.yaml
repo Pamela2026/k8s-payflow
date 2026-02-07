@@ -22,6 +22,9 @@ service:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9187"
+  # #### Expose the exporter on its native port so Prometheus can reach it. ####
+  port: 9187
+  targetPort: 9187
 
 # ============================================
 # EXPORTER RESOURCES
