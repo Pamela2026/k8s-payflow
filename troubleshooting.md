@@ -132,6 +132,64 @@ Fix:
 - Rebuild and redeploy with `REACT_APP_API_URL=/api`.
 - Ensure nginx proxies `/api` to `http://api-gateway.payflow.svc.cluster.local`.
 
+### 3) ResourceQuota / LimitRange blocks (jobs + exporters)
+Symptoms:
+- `exceeded quota: payflow-quota` (pods/limits CPU/memory)
+- `minimum cpu usage per Container is 50m` / `minimum memory usage per Container is 64Mi`
+Causes:
+- Namespace ResourceQuota caps exceeded.
+- LimitRange minimums higher than the pod requests.
+Checks:
+- `kubectl -n payflow get resourcequota`
+- `kubectl -n payflow describe resourcequota payflow-quota`
+- `kubectl -n payflow get limitrange`
+Fix:
+- Increase `k8s/policies/resource-quotas.yaml` or scale workloads down.
+- Lower LimitRange minimums in `k8s/policies/limit-range.yaml` or raise the pod requests.
+
+### 4) CronJob pod pile-ups (transaction-timeout-handler)
+Symptoms:
+- Jobs keep creating pods until the pod quota is hit.
+Causes:
+- High schedule frequency and long job history retention.
+Fix:
+- Tune history + TTL in `k8s/jobs/transaction-timeout-handler.yaml`:
+  - `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`, `ttlSecondsAfterFinished`
+  - `concurrencyPolicy: Forbid` to prevent overlap
+- Optional cleanup:
+  - `kubectl -n payflow delete job -l cronjob-name=transaction-timeout-handler`
+
+### 5) Prometheus targets DOWN (auth/api-gateway/exporters)
+Symptoms:
+- `context deadline exceeded` or `404 Not Found` on `/metrics`
+Causes:
+- Service annotation points to the wrong port.
+- App does not expose `/metrics`.
+- NetworkPolicy blocks monitoring namespace.
+Checks:
+- `kubectl -n payflow get svc auth-service api-gateway -o wide`
+- `kubectl -n payflow get endpoints auth-service api-gateway -o wide`
+- `kubectl -n payflow get networkpolicy allow-monitoring-scrape`
+Fix:
+- api-gateway should scrape `port: 3000`, `path: /metrics` in `k8s/services/all-services.yaml`.
+- auth-service does not expose `/metrics` in code; remove annotations or add metrics.
+- Ensure `allow-monitoring-scrape` policy is applied.
+
+### 6) Postgres exporter DB timeout
+Symptoms:
+- `Error opening connection to database` / `dial tcp ...:5432: connect: connection timed out`
+Causes:
+- Postgres exporter cannot reach the Postgres Service due to NetworkPolicy.
+- Wrong DB host in exporter values.
+Checks:
+- `kubectl -n payflow get endpoints postgres-service -o wide`
+- `kubectl -n payflow get networkpolicy postgres-ingress-from-services`
+Fix:
+- Allow `app.kubernetes.io/name=prometheus-postgres-exporter` in
+  `k8s/policies/network-policies.yaml` (postgres ingress).
+- Confirm `k8s/helm-values/monitoring/postgres-exporter-values.yaml`
+  points to `postgres-service.payflow.svc.cluster.local:5432`.
+
 ## Helpful commands
 
 - Check pods/services/ingress:
