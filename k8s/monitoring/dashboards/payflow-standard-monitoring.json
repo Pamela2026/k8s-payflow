@@ -4,7 +4,7 @@
   "title": "Payflow Standard Monitoring",
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "tags": ["payflow", "standard", "golden-signals"],
   "templating": {
@@ -162,6 +162,143 @@
         "sortOrder": "Descending"
       },
       "gridPos": { "x": 0, "y": 28, "w": 24, "h": 10 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Node CPU Usage (%)",
+      "description": "Node-level CPU usage from node-exporter.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 38, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Node Memory Usage (%)",
+      "description": "Node-level memory utilization from node-exporter.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 38, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Usage as % of Limits by Pod",
+      "description": "Pod CPU usage divided by configured CPU limits.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"cpu\"}), 0.001))",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 46, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory Usage as % of Limits by Pod",
+      "description": "Pod memory working set divided by configured memory limits.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"}) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"memory\"}), 1))",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 46, "w": 12, "h": 8 }
+    },
+    {
+      "type": "bargauge",
+      "title": "Top 5 CPU Consumers (cores)",
+      "description": "Highest CPU-consuming pods in the namespace.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "topk(5, sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])))",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 54, "w": 12, "h": 8 }
+    },
+    {
+      "type": "bargauge",
+      "title": "Top 5 Memory Consumers (MiB)",
+      "description": "Highest memory-consuming pods in the namespace.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "topk(5, sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"}) / 1024 / 1024)",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 54, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Usage by Deployment (cores)",
+      "description": "Deployment-level CPU breakdown inferred from pod naming.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (deployment) (label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]), \"deployment\", \"$1\", \"pod\", \"^(.*)-[a-z0-9]{9,10}-[a-z0-9]{5}$\"))",
+          "legendFormat": "{{deployment}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 62, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory Usage by Deployment (MiB)",
+      "description": "Deployment-level memory breakdown inferred from pod naming.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (deployment) (label_replace(container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"} / 1024 / 1024, \"deployment\", \"$1\", \"pod\", \"^(.*)-[a-z0-9]{9,10}-[a-z0-9]{5}$\"))",
+          "legendFormat": "{{deployment}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 62, "w": 12, "h": 8 }
+    },
+    {
+      "type": "stat",
+      "title": "Firing Alerts",
+      "description": "Current count of firing alerts in selected namespace.",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(ALERTS{namespace=\"$namespace\",alertstate=\"firing\"})" }
+      ],
+      "gridPos": { "x": 0, "y": 70, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Pending Alerts",
+      "description": "Current count of pending alerts in selected namespace.",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(ALERTS{namespace=\"$namespace\",alertstate=\"pending\"})" }
+      ],
+      "gridPos": { "x": 6, "y": 70, "w": 6, "h": 4 }
+    },
+    {
+      "type": "bargauge",
+      "title": "Firing Alerts by Name",
+      "description": "Which alert rules are currently firing.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (alertname) (ALERTS{namespace=\"$namespace\",alertstate=\"firing\"})",
+          "legendFormat": "{{alertname}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 70, "w": 12, "h": 4 }
     }
   ]
 }
