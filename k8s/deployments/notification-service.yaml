@@ -27,8 +27,8 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: notification-service
-        image: pamela001/payflow-notification-service:v1
-        imagePullPolicy: IfNotPresent
+        image: pamela001/payflow-wallet-notification-service:v2
+        imagePullPolicy: Always
         ports:
         - containerPort: 3003
         env:
