@@ -1,0 +1,167 @@
+{
+  "id": null,
+  "uid": "payflow-standard-monitoring",
+  "title": "Payflow Standard Monitoring",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["payflow", "standard", "golden-signals"],
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "label": "Namespace",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(up, namespace)",
+        "current": { "text": "payflow", "value": "payflow" }
+      },
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(up{namespace=\"$namespace\"}, service)",
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": ".*" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Targets Up",
+      "description": "How many discovered scrape targets are currently healthy (up == 1).",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == 1)" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Targets Down",
+      "description": "How many discovered scrape targets are failing (up == 0).",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == 0)" }
+      ],
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Pods Ready",
+      "description": "Count of containers in ready state for the selected namespace.",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(kube_pod_container_status_ready{namespace=\"$namespace\",condition=\"true\"})" }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Pod Restarts (1h)",
+      "description": "Container restarts in the last hour; rising values indicate instability.",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\"}[1h]))" }
+      ],
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Request Rate by Service (RPS)",
+      "description": "Golden signal: traffic. Uses counter rate over 5 minutes, grouped by service.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m]))",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Error Rate by Service (%)",
+      "description": "Golden signal: errors. Percent of 5xx requests over total requests by service.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"5..\"}[5m])) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency p95 by Service (seconds)",
+      "description": "Golden signal: latency. 95th percentile request duration from histogram buckets.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, service) (rate(http_request_duration_seconds_bucket{namespace=\"$namespace\",service=~\"$service\"}[5m])))",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Usage by Pod (cores)",
+      "description": "Golden signal: saturation. CPU cores consumed per pod over 5-minute window.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]))",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory Working Set by Pod (MiB)",
+      "description": "Memory pressure view per pod; values are converted from bytes to MiB.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"}) / 1024 / 1024",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Throttling by Pod (%)",
+      "description": "Shows how often CPU was throttled; sustained values indicate limits are too low.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (sum by (pod) (rate(container_cpu_cfs_throttled_periods_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (rate(container_cpu_cfs_periods_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])), 0.001))",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 }
+    },
+    {
+      "type": "logs",
+      "title": "Namespace Logs (Loki)",
+      "description": "Correlate metric anomalies with logs from the same namespace.",
+      "datasource": "Loki",
+      "targets": [
+        { "expr": "{namespace=\"$namespace\"}" }
+      ],
+      "options": {
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending"
+      },
+      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 10 }
+    }
+  ]
+}
