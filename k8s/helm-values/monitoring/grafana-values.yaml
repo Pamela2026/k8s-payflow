@@ -250,6 +250,7 @@ dashboards:
         }
     # #### STANDARD DASHBOARD ####
     # #### Purpose: baseline golden-signals dashboard for services + Kubernetes runtime. ####
+    # #### Layout: Cluster Health, Application Performance, Resource Utilization, Top Consumers, Alerts, Logs. ####
     # #### Import path in Grafana UI (manual): Dashboards > New > Import > Upload JSON. ####
     payflow-standard-monitoring:
       json: |
@@ -261,7 +262,11 @@ dashboards:
           "schemaVersion": 38,
           "version": 2,
           "refresh": "30s",
-          "tags": ["payflow", "standard", "golden-signals"],
+          "tags": [
+            "payflow",
+            "standard",
+            "golden-signals"
+          ],
           "templating": {
             "list": [
               {
@@ -270,7 +275,10 @@ dashboards:
                 "type": "query",
                 "datasource": "Prometheus",
                 "query": "label_values(up, namespace)",
-                "current": { "text": "payflow", "value": "payflow" }
+                "current": {
+                  "text": "payflow",
+                  "value": "payflow"
+                }
               },
               {
                 "name": "service",
@@ -280,20 +288,41 @@ dashboards:
                 "query": "label_values(up{namespace=\"$namespace\"}, service)",
                 "includeAll": true,
                 "allValue": ".*",
-                "current": { "text": "All", "value": ".*" }
+                "current": {
+                  "text": "All",
+                  "value": ".*"
+                }
               }
             ]
           },
           "panels": [
+            {
+              "type": "row",
+              "title": "Cluster Health",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 24,
+                "h": 1
+              }
+            },
             {
               "type": "stat",
               "title": "Targets Up",
               "description": "How many discovered scrape targets are currently healthy (up == 1).",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == 1)" }
+                {
+                  "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == 1)"
+                }
               ],
-              "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 }
+              "gridPos": {
+                "x": 0,
+                "y": 1,
+                "w": 6,
+                "h": 4
+              }
             },
             {
               "type": "stat",
@@ -301,9 +330,16 @@ dashboards:
               "description": "How many discovered scrape targets are failing (up == 0).",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == 0)" }
+                {
+                  "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == bool 0) or vector(0)"
+                }
               ],
-              "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 }
+              "gridPos": {
+                "x": 6,
+                "y": 1,
+                "w": 6,
+                "h": 4
+              }
             },
             {
               "type": "stat",
@@ -311,9 +347,16 @@ dashboards:
               "description": "Count of containers in ready state for the selected namespace.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(kube_pod_container_status_ready{namespace=\"$namespace\",condition=\"true\"})" }
+                {
+                  "expr": "(sum(kube_pod_container_status_ready{namespace=\"$namespace\"} == 1) or sum(kube_pod_status_ready{namespace=\"$namespace\",condition=\"true\"} == 1) or vector(0))"
+                }
               ],
-              "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 }
+              "gridPos": {
+                "x": 12,
+                "y": 1,
+                "w": 6,
+                "h": 4
+              }
             },
             {
               "type": "stat",
@@ -321,102 +364,16 @@ dashboards:
               "description": "Container restarts in the last hour; rising values indicate instability.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\"}[1h]))" }
-              ],
-              "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 }
-            },
-            {
-              "type": "timeseries",
-              "title": "Request Rate by Service (RPS)",
-              "description": "Golden signal: traffic. Uses counter rate over 5 minutes, grouped by service.",
-              "datasource": "Prometheus",
-              "targets": [
                 {
-                  "expr": "sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m]))",
-                  "legendFormat": "{{service}}"
+                  "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\"}[1h]))"
                 }
               ],
-              "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "Error Rate by Service (%)",
-              "description": "Golden signal: errors. Percent of 5xx requests over total requests by service.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "100 * (sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"5..\"}[5m])) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
-                  "legendFormat": "{{service}}"
-                }
-              ],
-              "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "Latency p95 by Service (seconds)",
-              "description": "Golden signal: latency. 95th percentile request duration from histogram buckets.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "histogram_quantile(0.95, sum by (le, service) (rate(http_request_duration_seconds_bucket{namespace=\"$namespace\",service=~\"$service\"}[5m])))",
-                  "legendFormat": "{{service}}"
-                }
-              ],
-              "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "CPU Usage by Pod (cores)",
-              "description": "Golden signal: saturation. CPU cores consumed per pod over 5-minute window.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]))",
-                  "legendFormat": "{{pod}}"
-                }
-              ],
-              "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "Memory Working Set by Pod (MiB)",
-              "description": "Memory pressure view per pod; values are converted from bytes to MiB.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"}) / 1024 / 1024",
-                  "legendFormat": "{{pod}}"
-                }
-              ],
-              "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "CPU Throttling by Pod (%)",
-              "description": "Shows how often CPU was throttled; sustained values indicate limits are too low.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "100 * (sum by (pod) (rate(container_cpu_cfs_throttled_periods_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (rate(container_cpu_cfs_periods_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])), 0.001))",
-                  "legendFormat": "{{pod}}"
-                }
-              ],
-              "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 }
-            },
-            {
-              "type": "logs",
-              "title": "Namespace Logs (Loki)",
-              "description": "Correlate metric anomalies with logs from the same namespace.",
-              "datasource": "Loki",
-              "targets": [
-                { "expr": "{namespace=\"$namespace\"}" }
-              ],
-              "options": {
-                "showLabels": true,
-                "showTime": true,
-                "sortOrder": "Descending"
-              },
-              "gridPos": { "x": 0, "y": 28, "w": 24, "h": 10 }
+              "gridPos": {
+                "x": 18,
+                "y": 1,
+                "w": 6,
+                "h": 4
+              }
             },
             {
               "type": "timeseries",
@@ -429,7 +386,12 @@ dashboards:
                   "legendFormat": "{{instance}}"
                 }
               ],
-              "gridPos": { "x": 0, "y": 38, "w": 12, "h": 8 }
+              "gridPos": {
+                "x": 0,
+                "y": 5,
+                "w": 12,
+                "h": 8
+              }
             },
             {
               "type": "timeseries",
@@ -442,7 +404,142 @@ dashboards:
                   "legendFormat": "{{instance}}"
                 }
               ],
-              "gridPos": { "x": 12, "y": 38, "w": 12, "h": 8 }
+              "gridPos": {
+                "x": 12,
+                "y": 5,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "row",
+              "title": "Application Performance",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 13,
+                "w": 24,
+                "h": 1
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "Request Rate by Service (RPS)",
+              "description": "Golden signal: traffic. Uses counter rate over 5 minutes, grouped by service.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m]))",
+                  "legendFormat": "{{service}}"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 14,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "Error Rate by Service (%)",
+              "description": "Golden signal: errors. Percent of 5xx requests over total requests by service.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "100 * (((sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"5..\"}[5m])) ) or on(service) (0 * sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])))) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
+                  "legendFormat": "{{service}}"
+                }
+              ],
+              "gridPos": {
+                "x": 12,
+                "y": 14,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "Latency p95 by Service (seconds)",
+              "description": "Golden signal: latency. 95th percentile request duration from histogram buckets.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "histogram_quantile(0.95, sum by (le, service) (rate(http_request_duration_seconds_bucket{namespace=\"$namespace\",service=~\"$service\"}[5m])))",
+                  "legendFormat": "{{service}}"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 22,
+                "w": 24,
+                "h": 8
+              }
+            },
+            {
+              "type": "row",
+              "title": "Resource Utilization",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 30,
+                "w": 24,
+                "h": 1
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "CPU Usage by Pod (cores)",
+              "description": "Golden signal: saturation. CPU cores consumed per pod over 5-minute window.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]))",
+                  "legendFormat": "{{pod}}"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 31,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "Memory Working Set by Pod (MiB)",
+              "description": "Memory pressure view per pod; values are converted from bytes to MiB.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"}) / 1024 / 1024",
+                  "legendFormat": "{{pod}}"
+                }
+              ],
+              "gridPos": {
+                "x": 12,
+                "y": 31,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "CPU Throttling by Pod (%)",
+              "description": "Shows how often CPU was throttled; sustained values indicate limits are too low.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "100 * (sum by (pod) (rate(container_cpu_cfs_throttled_periods_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (rate(container_cpu_cfs_periods_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])), 0.001))",
+                  "legendFormat": "{{pod}}"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 39,
+                "w": 12,
+                "h": 8
+              }
             },
             {
               "type": "timeseries",
@@ -455,7 +552,12 @@ dashboards:
                   "legendFormat": "{{pod}}"
                 }
               ],
-              "gridPos": { "x": 0, "y": 46, "w": 12, "h": 8 }
+              "gridPos": {
+                "x": 12,
+                "y": 39,
+                "w": 12,
+                "h": 8
+              }
             },
             {
               "type": "timeseries",
@@ -468,33 +570,12 @@ dashboards:
                   "legendFormat": "{{pod}}"
                 }
               ],
-              "gridPos": { "x": 12, "y": 46, "w": 12, "h": 8 }
-            },
-            {
-              "type": "bargauge",
-              "title": "Top 5 CPU Consumers (cores)",
-              "description": "Highest CPU-consuming pods in the namespace.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "topk(5, sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])))",
-                  "legendFormat": "{{pod}}"
-                }
-              ],
-              "gridPos": { "x": 0, "y": 54, "w": 12, "h": 8 }
-            },
-            {
-              "type": "bargauge",
-              "title": "Top 5 Memory Consumers (MiB)",
-              "description": "Highest memory-consuming pods in the namespace.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "topk(5, sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"}) / 1024 / 1024)",
-                  "legendFormat": "{{pod}}"
-                }
-              ],
-              "gridPos": { "x": 12, "y": 54, "w": 12, "h": 8 }
+              "gridPos": {
+                "x": 0,
+                "y": 47,
+                "w": 12,
+                "h": 8
+              }
             },
             {
               "type": "timeseries",
@@ -507,7 +588,12 @@ dashboards:
                   "legendFormat": "{{deployment}}"
                 }
               ],
-              "gridPos": { "x": 0, "y": 62, "w": 12, "h": 8 }
+              "gridPos": {
+                "x": 12,
+                "y": 47,
+                "w": 12,
+                "h": 8
+              }
             },
             {
               "type": "timeseries",
@@ -520,7 +606,70 @@ dashboards:
                   "legendFormat": "{{deployment}}"
                 }
               ],
-              "gridPos": { "x": 12, "y": 62, "w": 12, "h": 8 }
+              "gridPos": {
+                "x": 0,
+                "y": 55,
+                "w": 24,
+                "h": 8
+              }
+            },
+            {
+              "type": "row",
+              "title": "Top Consumers",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 63,
+                "w": 24,
+                "h": 1
+              }
+            },
+            {
+              "type": "bargauge",
+              "title": "Top 5 CPU Consumers (cores)",
+              "description": "Highest CPU-consuming pods in the namespace.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "topk(5, sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])))",
+                  "legendFormat": "{{pod}}"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 64,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "bargauge",
+              "title": "Top 5 Memory Consumers (MiB)",
+              "description": "Highest memory-consuming pods in the namespace.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "topk(5, sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"}) / 1024 / 1024)",
+                  "legendFormat": "{{pod}}"
+                }
+              ],
+              "gridPos": {
+                "x": 12,
+                "y": 64,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "row",
+              "title": "Alerts",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 72,
+                "w": 24,
+                "h": 1
+              }
             },
             {
               "type": "stat",
@@ -528,9 +677,16 @@ dashboards:
               "description": "Current count of firing alerts in selected namespace.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(ALERTS{namespace=\"$namespace\",alertstate=\"firing\"})" }
+                {
+                  "expr": "sum(ALERTS{namespace=\"$namespace\",alertstate=\"firing\"}) or vector(0)"
+                }
               ],
-              "gridPos": { "x": 0, "y": 70, "w": 6, "h": 4 }
+              "gridPos": {
+                "x": 0,
+                "y": 73,
+                "w": 6,
+                "h": 4
+              }
             },
             {
               "type": "stat",
@@ -538,9 +694,16 @@ dashboards:
               "description": "Current count of pending alerts in selected namespace.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(ALERTS{namespace=\"$namespace\",alertstate=\"pending\"})" }
+                {
+                  "expr": "sum(ALERTS{namespace=\"$namespace\",alertstate=\"pending\"}) or vector(0)"
+                }
               ],
-              "gridPos": { "x": 6, "y": 70, "w": 6, "h": 4 }
+              "gridPos": {
+                "x": 6,
+                "y": 73,
+                "w": 6,
+                "h": 4
+              }
             },
             {
               "type": "bargauge",
@@ -549,11 +712,49 @@ dashboards:
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "sum by (alertname) (ALERTS{namespace=\"$namespace\",alertstate=\"firing\"})",
+                  "expr": "sum by (alertname) (ALERTS{namespace=\"$namespace\",alertstate=\"firing\"}) or vector(0)",
                   "legendFormat": "{{alertname}}"
                 }
               ],
-              "gridPos": { "x": 12, "y": 70, "w": 12, "h": 4 }
+              "gridPos": {
+                "x": 12,
+                "y": 73,
+                "w": 12,
+                "h": 4
+              }
+            },
+            {
+              "type": "row",
+              "title": "Logs",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 77,
+                "w": 24,
+                "h": 1
+              }
+            },
+            {
+              "type": "logs",
+              "title": "Namespace Logs (Loki)",
+              "description": "Correlate metric anomalies with logs from the same namespace.",
+              "datasource": "Loki",
+              "targets": [
+                {
+                  "expr": "{namespace=\"$namespace\"}"
+                }
+              ],
+              "options": {
+                "showLabels": true,
+                "showTime": true,
+                "sortOrder": "Descending"
+              },
+              "gridPos": {
+                "x": 0,
+                "y": 78,
+                "w": 24,
+                "h": 10
+              }
             }
           ]
         }
