@@ -120,6 +120,66 @@
       }
     },
     {
+      "type": "stat",
+      "title": "Replica Gap",
+      "description": "Total desired replicas minus available replicas. Any value > 0 means pods are missing.",
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_deployment_spec_replicas{namespace=\"$namespace\"}) - sum(kube_deployment_status_replicas_available{namespace=\"$namespace\"})"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Desired vs Available Replicas by Deployment",
+      "description": "Per-deployment desired and available replicas to spot rollout mismatch quickly.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "kube_deployment_spec_replicas{namespace=\"$namespace\"}",
+          "legendFormat": "desired {{deployment}}"
+        },
+        {
+          "expr": "kube_deployment_status_replicas_available{namespace=\"$namespace\"}",
+          "legendFormat": "available {{deployment}}"
+        }
+      ],
+      "gridPos": {
+        "x": 6,
+        "y": 5,
+        "w": 18,
+        "h": 6
+      }
+    },
+    {
       "type": "timeseries",
       "title": "Node CPU Usage (%)",
       "description": "Node-level CPU usage from node-exporter.",
@@ -132,7 +192,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 11,
         "w": 12,
         "h": 8
       }
@@ -150,7 +210,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 5,
+        "y": 11,
         "w": 12,
         "h": 8
       }
@@ -161,7 +221,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 13,
+        "y": 19,
         "w": 24,
         "h": 1
       }
@@ -179,7 +239,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 20,
         "w": 12,
         "h": 8
       }
@@ -197,7 +257,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 14,
+        "y": 20,
         "w": 12,
         "h": 8
       }
@@ -215,7 +275,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 28,
         "w": 24,
         "h": 8
       }
@@ -226,7 +286,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 36,
         "w": 24,
         "h": 1
       }
@@ -244,7 +304,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 31,
+        "y": 37,
         "w": 12,
         "h": 8
       }
@@ -262,7 +322,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 31,
+        "y": 37,
         "w": 12,
         "h": 8
       }
@@ -280,7 +340,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 39,
+        "y": 45,
         "w": 12,
         "h": 8
       }
@@ -298,7 +358,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 39,
+        "y": 45,
         "w": 12,
         "h": 8
       }
@@ -316,7 +376,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 47,
+        "y": 53,
         "w": 12,
         "h": 8
       }
@@ -334,7 +394,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 47,
+        "y": 53,
         "w": 12,
         "h": 8
       }
@@ -352,7 +412,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 55,
+        "y": 61,
         "w": 24,
         "h": 8
       }
@@ -363,7 +423,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 63,
+        "y": 69,
         "w": 24,
         "h": 1
       }
@@ -381,7 +441,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 64,
+        "y": 70,
         "w": 12,
         "h": 8
       }
@@ -399,7 +459,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 64,
+        "y": 70,
         "w": 12,
         "h": 8
       }
@@ -410,7 +470,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 72,
+        "y": 78,
         "w": 24,
         "h": 1
       }
@@ -427,7 +487,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 73,
+        "y": 79,
         "w": 6,
         "h": 4
       }
@@ -444,7 +504,7 @@
       ],
       "gridPos": {
         "x": 6,
-        "y": 73,
+        "y": 79,
         "w": 6,
         "h": 4
       }
@@ -462,7 +522,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 73,
+        "y": 79,
         "w": 12,
         "h": 4
       }
@@ -473,7 +533,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 77,
+        "y": 83,
         "w": 24,
         "h": 1
       }
@@ -495,10 +555,48 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 78,
+        "y": 84,
         "w": 24,
         "h": 10
       }
+    },
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Active Alerts (Filtered)",
+      "description": "Alerts filtered by selected namespace/service.",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 94,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "(ALERTS{namespace=\"$namespace\",service=~\"$service\",alertstate=~\"firing|pending\"}) or (ALERTS{namespace=\"$namespace\",service=\"\",alertstate=~\"firing|pending\"}) or (ALERTS{namespace=\"$namespace\",service!~\".+\",alertstate=~\"firing|pending\"})",
+          "format": "table",
+          "instant": true
+        }
+      ]
     }
-  ]
+  ],
+  "annotations": {
+    "list": [
+      {
+        "datasource": "Prometheus",
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Alert States (Filtered)",
+        "expr": "(ALERTS{namespace=\"$namespace\",service=~\"$service\",alertstate=~\"firing|pending\"}) or (ALERTS{namespace=\"$namespace\",service=\"\",alertstate=~\"firing|pending\"}) or (ALERTS{namespace=\"$namespace\",service!~\".+\",alertstate=~\"firing|pending\"})",
+        "showIn": 0,
+        "step": "60s",
+        "tagKeys": "alertname",
+        "textFormat": "{{alertname}}",
+        "titleFormat": "Alert: {{alertname}}",
+        "type": "dashboard"
+      }
+    ]
+  }
 }
