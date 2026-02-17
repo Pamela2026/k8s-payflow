@@ -27,8 +27,8 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: auth-service
-        image: pamela001/payflow-auth-service:v1
-        imagePullPolicy: IfNotPresent
+        image: pamela001/payflow-wallet-auth-service:v2
+        imagePullPolicy: Always
         ports:
         - containerPort: 3004
         env:
