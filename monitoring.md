@@ -2,6 +2,24 @@
 
 This document explains how the monitoring components in this repo fit together and how they help during an outage.
 
+## Monitoring Stack Diagram
+
+```mermaid
+flowchart LR
+    Apps[Applications + Services] -->|/metrics scrape| Prometheus[Prometheus]
+    Exporters[Node/K8s + Dependency Exporters] -->|metrics scrape| Prometheus
+    Blackbox[Blackbox Exporter] -->|probe metrics| Prometheus
+    Jobs[Batch Jobs] -->|push metrics| Pushgateway[Pushgateway]
+    Pushgateway -->|metrics scrape| Prometheus
+
+    Prometheus -->|alert rules fire| Alertmanager[Alertmanager]
+    Alertmanager -->|routed notifications| OnCall[On-call / Receivers]
+
+    Prometheus -->|query metrics| Grafana[Grafana]
+    Promtail[Promtail] -->|ship logs| Loki[Loki]
+    Loki -->|query logs| Grafana
+```
+
 ## Components and Their Roles
 
 1. **Prometheus (metrics collection + alert evaluation)**
@@ -92,5 +110,4 @@ After the fix:
 - **Quick scoping:** Per-service alerts isolate the failing component.
 - **Deep diagnosis:** Logs and metrics together reveal root cause.
 - **Consistent signals:** Recording rules ensure dashboards and alerts agree.
-
 
