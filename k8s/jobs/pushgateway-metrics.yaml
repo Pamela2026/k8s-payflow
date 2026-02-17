@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pushgateway-metrics
+  namespace: payflow
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: pushgateway-metrics
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: push-metrics
+          image: curlimages/curl:8.6.0
+          env:
+            - name: PUSHGATEWAY_URL
+              value: http://payflow-prometheus-pushgateway.monitoring.svc.cluster.local:9091
+            - name: JOB_NAME
+              value: transaction-timeout-handler
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cat <<'EOF' | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/${JOB_NAME}/instance/${HOSTNAME}"
+              # TYPE payflow_job_last_success_timestamp_seconds gauge
+              payflow_job_last_success_timestamp_seconds $(date +%s)
+              # TYPE payflow_job_duration_seconds gauge
+              payflow_job_duration_seconds 1.23
+              EOF
