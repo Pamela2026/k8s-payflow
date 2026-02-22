@@ -10,13 +10,31 @@
 # #### Enabled to receive alerts from Prometheus rules. ####
 alertmanager:
   enabled: true
+  alertmanagerFiles:
+    alertmanager.yml: |
+      global:
+        resolve_timeout: 5m
+      route:
+        receiver: "blackhole"
+        group_by: ["alertname", "namespace", "service"]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 3h
+        routes:
+          - receiver: "critical"
+            matchers:
+              - severity="critical"
+      receivers:
+        - name: "blackhole"
+        - name: "critical"
+          # TODO: add Slack/Email/PagerDuty configs here.
 
 # ============================================
-# PUSHGATEWAY (DISABLED)
+# PUSHGATEWAY (ENABLED)
 # ============================================
-# #### Disabled because workloads are expected to be scraped directly. ####
+# #### Enabled for short-lived jobs to push metrics (migrations, backups, handlers). ####
 pushgateway:
-  enabled: false
+  enabled: true
 
 # ============================================
 # KUBE-STATE-METRICS
@@ -109,6 +127,35 @@ server:
             - source_labels: [__meta_kubernetes_service_name]
               action: replace
               target_label: service
+        - job_name: "blackbox-http"
+          metrics_path: /probe
+          params:
+            module: [http_2xx]
+          static_configs:
+            - targets:
+                - http://api-gateway.payflow.svc.cluster.local:80/metrics
+                - http://auth-service.payflow.svc.cluster.local:3004/metrics
+                - http://wallet-service.payflow.svc.cluster.local:3001/metrics
+                - http://transaction-service.payflow.svc.cluster.local:3002/metrics
+                - http://notification-service.payflow.svc.cluster.local:3003/metrics
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: __param_target
+            - source_labels: [__param_target]
+              target_label: instance
+            - source_labels: [__param_target]
+              target_label: service
+              regex: http://([^\\.]+)\\..*
+              replacement: $1
+            - target_label: namespace
+              replacement: payflow
+            - target_label: __address__
+              replacement: payflow-blackbox-exporter.monitoring.svc.cluster.local:9115
+        - job_name: "pushgateway"
+          honor_labels: true
+          static_configs:
+            - targets:
+                - payflow-prometheus-pushgateway.monitoring.svc.cluster.local:9091
     # ============================================
     # #### RECORDING RULES ####
     # ============================================
@@ -239,6 +286,19 @@ server:
               annotations:
                 summary: "Latency SLI below 95% in namespace {{ $labels.namespace }}"
                 description: "Less than 95% of requests are <= 500ms over the last 5 minutes."
+        - name: payflow.slo-service
+          rules:
+            - alert: PayflowAvailabilityErrorBudgetBurnHighPerService
+              expr: |
+                payflow:slo_error_budget_burn:ratio5m > 14
+                and on (namespace, service)
+                payflow:slo_error_budget_burn:ratio1h > 14
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "High SLO burn rate (service: {{ $labels.service }})"
+                description: "Error budget is burning fast for service {{ $labels.service }} in {{ $labels.namespace }}."
         - name: payflow.availability
           rules:
             - alert: PayflowHighErrorRateWarning
@@ -359,6 +419,14 @@ server:
                 description: "Pod memory usage exceeds 90% of configured limits."
         - name: payflow.infrastructure
           rules:
+            - alert: PayflowScrapeTargetDown
+              expr: up{namespace="payflow"} == 0
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Scrape target down (service: {{ $labels.service }})"
+                description: "Prometheus scrape target {{ $labels.instance }} has been down for more than 5 minutes."
             - alert: PayflowNodeHighCPU
               expr: |
                 100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) > 90
@@ -377,3 +445,13 @@ server:
               annotations:
                 summary: "Node memory pressure detected"
                 description: "Node memory usage is above 90%."
+        - name: payflow.blackbox
+          rules:
+            - alert: PayflowBlackboxProbeFailure
+              expr: probe_success{job="blackbox-http"} == 0
+              for: 3m
+              labels:
+                severity: critical
+              annotations:
+                summary: "Blackbox probe failure (service: {{ $labels.service }})"
+                description: "HTTP probe failed for {{ $labels.instance }} in {{ $labels.namespace }}."

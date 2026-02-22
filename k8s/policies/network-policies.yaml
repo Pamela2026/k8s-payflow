@@ -314,6 +314,9 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: prometheus-rabbitmq-exporter
+        - podSelector:
+            matchLabels:
+              app: prometheus-rabbitmq-exporter
       ports:
         - protocol: TCP
           port: 15672
@@ -503,9 +506,54 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: prometheus-rabbitmq-exporter
+        - podSelector:
+            matchLabels:
+              app: prometheus-rabbitmq-exporter
       ports:
         - protocol: TCP
           port: 5672
+---
+# #### exporters-egress-to-infra-legacy-label allows exporter pods using legacy app labels to reach infra services. ####
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: exporters-egress-to-infra-legacy-label
+  namespace: payflow
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - prometheus-postgres-exporter
+          - prometheus-redis-exporter
+          - prometheus-rabbitmq-exporter
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: rabbitmq
+      ports:
+        - protocol: TCP
+          port: 5672
+        - protocol: TCP
+          port: 15672
 ---
 # #### jobs-egress-to-postgres allows job/cronjob pods to access Postgres on 5432. ####
 apiVersion: networking.k8s.io/v1

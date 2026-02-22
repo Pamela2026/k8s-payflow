@@ -218,6 +218,23 @@ helm upgrade --install payflow-rabbitmq-exporter prometheus-community/prometheus
   -f k8s/helm-values/monitoring/rabbitmq-exporter-values.yaml \
   "${RABBITMQ_EXPORTER_ARGS[@]}"
 
+# Work around chart rendering that may omit Service annotations needed by
+# annotation-based Prometheus discovery.
+RABBITMQ_EXPORTER_SERVICE="$(kubectl get svc -n "$NAMESPACE" -l app=prometheus-rabbitmq-exporter,release=payflow-rabbitmq-exporter -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+if [[ -n "$RABBITMQ_EXPORTER_SERVICE" ]]; then
+  kubectl annotate svc -n "$NAMESPACE" "$RABBITMQ_EXPORTER_SERVICE" \
+    prometheus.io/scrape="true" \
+    prometheus.io/port="9419" \
+    --overwrite >/dev/null
+else
+  echo "⚠️  Could not find RabbitMQ exporter Service to annotate for Prometheus scraping."
+fi
+
+helm upgrade --install payflow-blackbox-exporter prometheus-community/prometheus-blackbox-exporter \
+  -n "$MONITORING_NAMESPACE" \
+  -f k8s/helm-values/monitoring/blackbox-exporter-values.yaml \
+  --create-namespace
+
 helm upgrade --install payflow-grafana grafana/grafana \
   -n "$MONITORING_NAMESPACE" \
   -f k8s/helm-values/monitoring/grafana-values.yaml \
