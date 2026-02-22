@@ -344,11 +344,11 @@ dashboards:
             {
               "type": "stat",
               "title": "Pods Ready",
-              "description": "Count of containers in ready state for the selected namespace.",
+              "description": "Count of ready pods in the selected namespace.",
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "(sum(kube_pod_container_status_ready{namespace=\"$namespace\"} == 1) or sum(kube_pod_status_ready{namespace=\"$namespace\",condition=\"true\"} == 1) or vector(0))"
+                  "expr": "sum(kube_pod_status_ready{namespace=\"$namespace\",condition=\"true\"})"
                 }
               ],
               "gridPos": {

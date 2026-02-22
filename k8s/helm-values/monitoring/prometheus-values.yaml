@@ -91,367 +91,367 @@ server:
   # ============================================
   # #### Inline Prometheus config files packaged into the chart ConfigMap. ####
   # #### This deployment scrapes only services that explicitly opt in via annotations. ####
-  serverFiles:
-    prometheus.yml:
-      # #### Loads custom SLI/SLO recording and alerting rules from this same ConfigMap. ####
-      rule_files:
-        - /etc/config/recording_rules.yml
-        - /etc/config/alerting_rules.yml
-      # #### Kubernetes endpoint discovery + relabel pipeline for annotated service scraping. ####
-      scrape_configs:
-        - job_name: "kubernetes-service-endpoints"
-          kubernetes_sd_configs:
-            - role: endpoints
-          relabel_configs:
-            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
-              action: keep
-              regex: true
-            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
-              action: replace
-              target_label: __scheme__
-              regex: (https?)
-            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
-              action: replace
-              target_label: __metrics_path__
-              regex: (.+)
-            - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
-              action: replace
-              target_label: __address__
-              regex: ([^:]+)(?::\\d+)?;(\\d+)
-              replacement: $1:$2
-            - action: labelmap
-              regex: __meta_kubernetes_service_label_(.+)
-            - source_labels: [__meta_kubernetes_namespace]
-              action: replace
-              target_label: namespace
-            - source_labels: [__meta_kubernetes_service_name]
-              action: replace
-              target_label: service
-        - job_name: "blackbox-http"
-          metrics_path: /probe
-          params:
-            module: [http_2xx]
-          static_configs:
-            - targets:
-                - http://api-gateway.payflow.svc.cluster.local:80/metrics
-                - http://auth-service.payflow.svc.cluster.local:3004/metrics
-                - http://wallet-service.payflow.svc.cluster.local:3001/metrics
-                - http://transaction-service.payflow.svc.cluster.local:3002/metrics
-                - http://notification-service.payflow.svc.cluster.local:3003/metrics
-          relabel_configs:
-            - source_labels: [__address__]
-              target_label: __param_target
-            - source_labels: [__param_target]
-              target_label: instance
-            - source_labels: [__param_target]
-              target_label: service
-              regex: http://([^\\.]+)\\..*
-              replacement: $1
-            - target_label: namespace
-              replacement: payflow
-            - target_label: __address__
-              replacement: payflow-blackbox-exporter.monitoring.svc.cluster.local:9115
-        - job_name: "pushgateway"
-          honor_labels: true
-          static_configs:
-            - targets:
-                - payflow-prometheus-pushgateway.monitoring.svc.cluster.local:9091
-    # ============================================
-    # #### RECORDING RULES ####
-    # ============================================
-    # #### Normalize current HTTP metrics into reusable SLI/SLO series. ####
-    recording_rules.yml:
-      groups:
-        - name: payflow-sli-recording
-          interval: 1m
-          rules:
-            # #### Prefer explicit request counter; fallback to histogram count where needed. ####
-            - record: payflow:http_requests:rate5m
-              expr: |
-                sum by (namespace, service) (
-                  rate(http_requests_total[5m])
-                )
-                or
+serverFiles:
+  prometheus.yml:
+    # #### Loads custom SLI/SLO recording and alerting rules from this same ConfigMap. ####
+    rule_files:
+      - /etc/config/recording_rules.yml
+      - /etc/config/alerting_rules.yml
+    # #### Kubernetes endpoint discovery + relabel pipeline for annotated service scraping. ####
+    scrape_configs:
+      - job_name: "kubernetes-service-endpoints"
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (https?)
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: ([^:]+)(?::\\d+)?;(\\d+)
+            replacement: $1:$2
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: service
+      - job_name: "blackbox-http"
+        metrics_path: /probe
+        params:
+          module: [http_2xx]
+        static_configs:
+          - targets:
+              - http://api-gateway.payflow.svc.cluster.local:80/metrics
+              - http://auth-service.payflow.svc.cluster.local:3004/metrics
+              - http://wallet-service.payflow.svc.cluster.local:3001/metrics
+              - http://transaction-service.payflow.svc.cluster.local:3002/metrics
+              - http://notification-service.payflow.svc.cluster.local:3003/metrics
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - source_labels: [__param_target]
+            target_label: service
+            regex: http://([^\\.]+)\\..*
+            replacement: $1
+          - target_label: namespace
+            replacement: payflow
+          - target_label: __address__
+            replacement: payflow-blackbox-exporter.monitoring.svc.cluster.local:9115
+      - job_name: "pushgateway"
+        honor_labels: true
+        static_configs:
+          - targets:
+              - payflow-prometheus-pushgateway.monitoring.svc.cluster.local:9091
+  # ============================================
+  # #### RECORDING RULES ####
+  # ============================================
+  # #### Normalize current HTTP metrics into reusable SLI/SLO series. ####
+  recording_rules.yml:
+    groups:
+      - name: payflow-sli-recording
+        interval: 1m
+        rules:
+          # #### Prefer explicit request counter; fallback to histogram count where needed. ####
+          - record: payflow:http_requests:rate5m
+            expr: |
+              sum by (namespace, service) (
+                rate(http_requests_total[5m])
+              )
+              or
+              sum by (namespace, service) (
+                rate(http_request_duration_seconds_count[5m])
+              )
+          # #### Uses the same counter/histogram strategy as total request rate. ####
+          - record: payflow:http_requests_errors:rate5m
+            expr: |
+              sum by (namespace, service) (
+                rate(http_requests_total{status_code=~"5.."}[5m])
+              )
+              or
+              sum by (namespace, service) (
+                rate(http_request_duration_seconds_count{status_code=~"5.."}[5m])
+              )
+          # #### Same throughput series over a longer window for slow-burn calculations. ####
+          - record: payflow:http_requests:rate1h
+            expr: |
+              sum by (namespace, service) (
+                rate(http_requests_total[1h])
+              )
+              or
+              sum by (namespace, service) (
+                rate(http_request_duration_seconds_count[1h])
+              )
+          # #### Same error series over a longer window for slow-burn calculations. ####
+          - record: payflow:http_requests_errors:rate1h
+            expr: |
+              sum by (namespace, service) (
+                rate(http_requests_total{status_code=~"5.."}[1h])
+              )
+              or
+              sum by (namespace, service) (
+                rate(http_request_duration_seconds_count{status_code=~"5.."}[1h])
+              )
+          # #### Proportion of requests served in <= 500ms over 5 minutes. ####
+          - record: payflow:sli_latency_le_500ms:ratio5m
+            expr: |
+              sum by (namespace, service) (
+                rate(http_request_duration_seconds_bucket{le="0.5"}[5m])
+              )
+              /
+              clamp_min(
                 sum by (namespace, service) (
                   rate(http_request_duration_seconds_count[5m])
+                ),
+                0.001
+              )
+          # #### Error budget burn for 99.9% availability objective (budget = 0.001). ####
+          - record: payflow:slo_error_budget_burn:ratio5m
+            expr: |
+              (
+                payflow:http_requests_errors:rate5m
+                /
+                clamp_min(payflow:http_requests:rate5m, 0.001)
+              ) / 0.001
+          # #### Long-window burn rate used for slow-burn alerting. ####
+          - record: payflow:slo_error_budget_burn:ratio1h
+            expr: |
+              (
+                payflow:http_requests_errors:rate1h
+                /
+                clamp_min(payflow:http_requests:rate1h, 0.001)
+              ) / 0.001
+  # ============================================
+  # #### ALERTING RULES ####
+  # ============================================
+  # #### Evaluate the recorded SLI/SLO series. ####
+  alerting_rules.yml:
+    groups:
+      - name: payflow-slo-alerting
+        rules:
+          # #### Multi-window burn alert catches acute error-budget consumption. ####
+          - alert: PayflowAvailabilityErrorBudgetBurnHigh
+            expr: |
+              sum by (namespace) (payflow:slo_error_budget_burn:ratio5m) > 14
+              and
+              sum by (namespace) (payflow:slo_error_budget_burn:ratio1h) > 14
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High SLO burn rate in namespace {{ $labels.namespace }}"
+              description: "Availability error budget burn is high for both 5m and 1h windows."
+          # #### Alerts when 1h availability stays below 99.9% target. ####
+          - alert: PayflowAvailabilitySLIBelowTarget
+            expr: |
+              (
+                1 - (
+                  sum by (namespace) (payflow:http_requests_errors:rate1h)
+                  /
+                  clamp_min(sum by (namespace) (payflow:http_requests:rate1h), 0.001)
                 )
-            # #### Uses the same counter/histogram strategy as total request rate. ####
-            - record: payflow:http_requests_errors:rate5m
-              expr: |
-                sum by (namespace, service) (
-                  rate(http_requests_total{status_code=~"5.."}[5m])
+              ) < 0.999
+            for: 30m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Availability SLI below 99.9% in namespace {{ $labels.namespace }}"
+              description: "The 1h rolling availability is below the SLO target."
+          # #### Alerts when <=500ms success ratio drops below 95%. ####
+          - alert: PayflowLatencySLIBelowTarget
+            expr: |
+              (
+                sum by (namespace) (
+                  payflow:sli_latency_le_500ms:ratio5m * payflow:http_requests:rate5m
                 )
-                or
-                sum by (namespace, service) (
-                  rate(http_request_duration_seconds_count{status_code=~"5.."}[5m])
-                )
-            # #### Same throughput series over a longer window for slow-burn calculations. ####
-            - record: payflow:http_requests:rate1h
-              expr: |
-                sum by (namespace, service) (
-                  rate(http_requests_total[1h])
-                )
-                or
-                sum by (namespace, service) (
-                  rate(http_request_duration_seconds_count[1h])
-                )
-            # #### Same error series over a longer window for slow-burn calculations. ####
-            - record: payflow:http_requests_errors:rate1h
-              expr: |
-                sum by (namespace, service) (
-                  rate(http_requests_total{status_code=~"5.."}[1h])
-                )
-                or
-                sum by (namespace, service) (
-                  rate(http_request_duration_seconds_count{status_code=~"5.."}[1h])
-                )
-            # #### Proportion of requests served in <= 500ms over 5 minutes. ####
-            - record: payflow:sli_latency_le_500ms:ratio5m
-              expr: |
-                sum by (namespace, service) (
-                  rate(http_request_duration_seconds_bucket{le="0.5"}[5m])
+                /
+                clamp_min(sum by (namespace) (payflow:http_requests:rate5m), 0.001)
+              ) < 0.95
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Latency SLI below 95% in namespace {{ $labels.namespace }}"
+              description: "Less than 95% of requests are <= 500ms over the last 5 minutes."
+      - name: payflow.slo-service
+        rules:
+          - alert: PayflowAvailabilityErrorBudgetBurnHighPerService
+            expr: |
+              payflow:slo_error_budget_burn:ratio5m > 14
+              and on (namespace, service)
+              payflow:slo_error_budget_burn:ratio1h > 14
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High SLO burn rate (service: {{ $labels.service }})"
+              description: "Error budget is burning fast for service {{ $labels.service }} in {{ $labels.namespace }}."
+      - name: payflow.availability
+        rules:
+          - alert: PayflowHighErrorRateWarning
+            expr: |
+              (
+                sum by (service) (
+                  rate(http_requests_total{namespace="payflow",status_code=~"5.."}[5m])
                 )
                 /
                 clamp_min(
-                  sum by (namespace, service) (
-                    rate(http_request_duration_seconds_count[5m])
+                  sum by (service) (
+                    rate(http_requests_total{namespace="payflow"}[5m])
                   ),
                   0.001
                 )
-            # #### Error budget burn for 99.9% availability objective (budget = 0.001). ####
-            - record: payflow:slo_error_budget_burn:ratio5m
-              expr: |
-                (
-                  payflow:http_requests_errors:rate5m
-                  /
-                  clamp_min(payflow:http_requests:rate5m, 0.001)
-                ) / 0.001
-            # #### Long-window burn rate used for slow-burn alerting. ####
-            - record: payflow:slo_error_budget_burn:ratio1h
-              expr: |
-                (
-                  payflow:http_requests_errors:rate1h
-                  /
-                  clamp_min(payflow:http_requests:rate1h, 0.001)
-                ) / 0.001
-    # ============================================
-    # #### ALERTING RULES ####
-    # ============================================
-    # #### Evaluate the recorded SLI/SLO series. ####
-    alerting_rules.yml:
-      groups:
-        - name: payflow-slo-alerting
-          rules:
-            # #### Multi-window burn alert catches acute error-budget consumption. ####
-            - alert: PayflowAvailabilityErrorBudgetBurnHigh
-              expr: |
-                sum by (namespace) (payflow:slo_error_budget_burn:ratio5m) > 14
-                and
-                sum by (namespace) (payflow:slo_error_budget_burn:ratio1h) > 14
-              for: 10m
-              labels:
-                severity: warning
-              annotations:
-                summary: "High SLO burn rate in namespace {{ $labels.namespace }}"
-                description: "Availability error budget burn is high for both 5m and 1h windows."
-            # #### Alerts when 1h availability stays below 99.9% target. ####
-            - alert: PayflowAvailabilitySLIBelowTarget
-              expr: |
-                (
-                  1 - (
-                    sum by (namespace) (payflow:http_requests_errors:rate1h)
-                    /
-                    clamp_min(sum by (namespace) (payflow:http_requests:rate1h), 0.001)
-                  )
-                ) < 0.999
-              for: 30m
-              labels:
-                severity: warning
-              annotations:
-                summary: "Availability SLI below 99.9% in namespace {{ $labels.namespace }}"
-                description: "The 1h rolling availability is below the SLO target."
-            # #### Alerts when <=500ms success ratio drops below 95%. ####
-            - alert: PayflowLatencySLIBelowTarget
-              expr: |
-                (
-                  sum by (namespace) (
-                    payflow:sli_latency_le_500ms:ratio5m * payflow:http_requests:rate5m
-                  )
-                  /
-                  clamp_min(sum by (namespace) (payflow:http_requests:rate5m), 0.001)
-                ) < 0.95
-              for: 15m
-              labels:
-                severity: warning
-              annotations:
-                summary: "Latency SLI below 95% in namespace {{ $labels.namespace }}"
-                description: "Less than 95% of requests are <= 500ms over the last 5 minutes."
-        - name: payflow.slo-service
-          rules:
-            - alert: PayflowAvailabilityErrorBudgetBurnHighPerService
-              expr: |
-                payflow:slo_error_budget_burn:ratio5m > 14
-                and on (namespace, service)
-                payflow:slo_error_budget_burn:ratio1h > 14
-              for: 10m
-              labels:
-                severity: warning
-              annotations:
-                summary: "High SLO burn rate (service: {{ $labels.service }})"
-                description: "Error budget is burning fast for service {{ $labels.service }} in {{ $labels.namespace }}."
-        - name: payflow.availability
-          rules:
-            - alert: PayflowHighErrorRateWarning
-              expr: |
-                (
+              ) > 0.02
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Payflow error rate > 2% (service: {{ $labels.service }})"
+              description: "More than 2% of requests are returning 5xx errors for service {{ $labels.service }}."
+          - alert: PayflowHighErrorRateCritical
+            expr: |
+              (
+                sum by (service) (
+                  rate(http_requests_total{namespace="payflow",status_code=~"5.."}[5m])
+                )
+                /
+                clamp_min(
                   sum by (service) (
-                    rate(http_requests_total{namespace="payflow",status_code=~"5.."}[5m])
-                  )
-                  /
-                  clamp_min(
-                    sum by (service) (
-                      rate(http_requests_total{namespace="payflow"}[5m])
-                    ),
-                    0.001
-                  )
-                ) > 0.02
-              for: 5m
-              labels:
-                severity: warning
-              annotations:
-                summary: "Payflow error rate > 2% (service: {{ $labels.service }})"
-                description: "More than 2% of requests are returning 5xx errors for service {{ $labels.service }}."
-            - alert: PayflowHighErrorRateCritical
-              expr: |
-                (
-                  sum by (service) (
-                    rate(http_requests_total{namespace="payflow",status_code=~"5.."}[5m])
-                  )
-                  /
-                  clamp_min(
-                    sum by (service) (
-                      rate(http_requests_total{namespace="payflow"}[5m])
-                    ),
-                    0.001
-                  )
-                ) > 0.05
-              for: 5m
-              labels:
-                severity: critical
-              annotations:
-                summary: "Payflow error rate > 5% (service: {{ $labels.service }})"
-                description: "More than 5% of requests are failing for service {{ $labels.service }}. User impact likely."
-        - name: payflow.latency
-          rules:
-            - alert: PayflowHighLatencyP95
-              expr: |
-                histogram_quantile(
-                  0.95,
-                  sum(rate(http_request_duration_seconds_bucket{namespace="payflow"}[5m])) by (le, service)
-                ) > 1.5
-              for: 5m
-              labels:
-                severity: warning
-              annotations:
-                summary: "High latency (p95 > 1.5s) (service: {{ $labels.service }})"
-                description: "95th percentile latency is above 1.5 seconds for service {{ $labels.service }}."
-        - name: payflow.stability
-          rules:
-            - alert: PayflowPodHighRestarts
-              expr: increase(kube_pod_container_status_restarts_total{namespace="payflow"}[10m]) > 3
-              for: 10m
-              labels:
-                severity: warning
-              annotations:
-                summary: "High pod restart rate"
-                description: "Pods are restarting frequently in payflow namespace."
-            - alert: PayflowReplicaMismatch
-              expr: |
-                kube_deployment_status_replicas_available{namespace="payflow"}
-                <
-                kube_deployment_spec_replicas{namespace="payflow"}
-              for: 5m
-              labels:
-                severity: critical
-              annotations:
-                summary: "Deployment replica mismatch"
-                description: "Available replicas are below desired count."
-        - name: payflow.saturation
-          rules:
-            - alert: PayflowHighCPUThrottling
-              expr: |
-                (
-                  sum(rate(container_cpu_cfs_throttled_periods_total{namespace="payflow",container!=""}[5m]))
-                  /
-                  sum(rate(container_cpu_cfs_periods_total{namespace="payflow",container!=""}[5m]))
-                ) > 0.25
-              for: 10m
-              labels:
-                severity: warning
-              annotations:
-                summary: "High CPU throttling detected"
-                description: "CPU throttling above 25%. CPU limits may be too low."
-            - alert: PayflowCPUUsageNearLimit
-              expr: |
-                (
-                  sum(rate(container_cpu_usage_seconds_total{namespace="payflow",container!=""}[5m])) by (pod)
-                  /
-                  sum(kube_pod_container_resource_limits{namespace="payflow",resource="cpu"}) by (pod)
-                ) > 0.9
-              for: 10m
-              labels:
-                severity: warning
-              annotations:
-                summary: "Pod CPU usage near limit"
-                description: "Pod CPU usage exceeds 90% of configured limits."
-            - alert: PayflowMemoryUsageNearLimit
-              expr: |
-                (
-                  sum(container_memory_working_set_bytes{namespace="payflow",container!=""}) by (pod)
-                  /
-                  sum(kube_pod_container_resource_limits{namespace="payflow",resource="memory"}) by (pod)
-                ) > 0.9
-              for: 5m
-              labels:
-                severity: critical
-              annotations:
-                summary: "Pod memory usage near limit"
-                description: "Pod memory usage exceeds 90% of configured limits."
-        - name: payflow.infrastructure
-          rules:
-            - alert: PayflowScrapeTargetDown
-              expr: up{namespace="payflow"} == 0
-              for: 5m
-              labels:
-                severity: warning
-              annotations:
-                summary: "Scrape target down (service: {{ $labels.service }})"
-                description: "Prometheus scrape target {{ $labels.instance }} has been down for more than 5 minutes."
-            - alert: PayflowNodeHighCPU
-              expr: |
-                100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) > 90
-              for: 10m
-              labels:
-                severity: warning
-              annotations:
-                summary: "Node CPU above 90%"
-                description: "Node CPU utilization is above 90%."
-            - alert: PayflowNodeMemoryPressure
-              expr: |
-                100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 90
-              for: 5m
-              labels:
-                severity: critical
-              annotations:
-                summary: "Node memory pressure detected"
-                description: "Node memory usage is above 90%."
-        - name: payflow.blackbox
-          rules:
-            - alert: PayflowBlackboxProbeFailure
-              expr: probe_success{job="blackbox-http"} == 0
-              for: 3m
-              labels:
-                severity: critical
-              annotations:
-                summary: "Blackbox probe failure (service: {{ $labels.service }})"
-                description: "HTTP probe failed for {{ $labels.instance }} in {{ $labels.namespace }}."
+                    rate(http_requests_total{namespace="payflow"}[5m])
+                  ),
+                  0.001
+                )
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Payflow error rate > 5% (service: {{ $labels.service }})"
+              description: "More than 5% of requests are failing for service {{ $labels.service }}. User impact likely."
+      - name: payflow.latency
+        rules:
+          - alert: PayflowHighLatencyP95
+            expr: |
+              histogram_quantile(
+                0.95,
+                sum(rate(http_request_duration_seconds_bucket{namespace="payflow"}[5m])) by (le, service)
+              ) > 1.5
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High latency (p95 > 1.5s) (service: {{ $labels.service }})"
+              description: "95th percentile latency is above 1.5 seconds for service {{ $labels.service }}."
+      - name: payflow.stability
+        rules:
+          - alert: PayflowPodHighRestarts
+            expr: increase(kube_pod_container_status_restarts_total{namespace="payflow"}[10m]) > 3
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High pod restart rate"
+              description: "Pods are restarting frequently in payflow namespace."
+          - alert: PayflowReplicaMismatch
+            expr: |
+              kube_deployment_status_replicas_available{namespace="payflow"}
+              <
+              kube_deployment_spec_replicas{namespace="payflow"}
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Deployment replica mismatch"
+              description: "Available replicas are below desired count."
+      - name: payflow.saturation
+        rules:
+          - alert: PayflowHighCPUThrottling
+            expr: |
+              (
+                sum(rate(container_cpu_cfs_throttled_periods_total{namespace="payflow",container!=""}[5m]))
+                /
+                sum(rate(container_cpu_cfs_periods_total{namespace="payflow",container!=""}[5m]))
+              ) > 0.25
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High CPU throttling detected"
+              description: "CPU throttling above 25%. CPU limits may be too low."
+          - alert: PayflowCPUUsageNearLimit
+            expr: |
+              (
+                sum(rate(container_cpu_usage_seconds_total{namespace="payflow",container!=""}[5m])) by (pod)
+                /
+                sum(kube_pod_container_resource_limits{namespace="payflow",resource="cpu"}) by (pod)
+              ) > 0.9
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod CPU usage near limit"
+              description: "Pod CPU usage exceeds 90% of configured limits."
+          - alert: PayflowMemoryUsageNearLimit
+            expr: |
+              (
+                sum(container_memory_working_set_bytes{namespace="payflow",container!=""}) by (pod)
+                /
+                sum(kube_pod_container_resource_limits{namespace="payflow",resource="memory"}) by (pod)
+              ) > 0.9
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pod memory usage near limit"
+              description: "Pod memory usage exceeds 90% of configured limits."
+      - name: payflow.infrastructure
+        rules:
+          - alert: PayflowScrapeTargetDown
+            expr: up{namespace="payflow"} == 0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Scrape target down (service: {{ $labels.service }})"
+              description: "Prometheus scrape target {{ $labels.instance }} has been down for more than 5 minutes."
+          - alert: PayflowNodeHighCPU
+            expr: |
+              100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) > 90
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Node CPU above 90%"
+              description: "Node CPU utilization is above 90%."
+          - alert: PayflowNodeMemoryPressure
+            expr: |
+              100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 90
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Node memory pressure detected"
+              description: "Node memory usage is above 90%."
+      - name: payflow.blackbox
+        rules:
+          - alert: PayflowBlackboxProbeFailure
+            expr: probe_success{job="blackbox-http"} == 0
+            for: 3m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Blackbox probe failure (service: {{ $labels.service }})"
+              description: "HTTP probe failed for {{ $labels.instance }} in {{ $labels.namespace }}."
