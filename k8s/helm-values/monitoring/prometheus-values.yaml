@@ -15,19 +15,24 @@ alertmanager:
       global:
         resolve_timeout: 5m
       route:
-        receiver: "blackhole"
+        receiver: "webhook-default"
         group_by: ["alertname", "namespace", "service"]
         group_wait: 30s
         group_interval: 5m
         repeat_interval: 3h
         routes:
-          - receiver: "critical"
+          - receiver: "webhook-critical"
             matchers:
               - severity="critical"
       receivers:
-        - name: "blackhole"
-        - name: "critical"
-          # TODO: add Slack/Email/PagerDuty configs here.
+        - name: "webhook-default"
+          webhook_configs:
+            - url: "http://payflow-alert-webhook.monitoring.svc.cluster.local:8080/default"
+              send_resolved: true
+        - name: "webhook-critical"
+          webhook_configs:
+            - url: "http://payflow-alert-webhook.monitoring.svc.cluster.local:8080/critical"
+              send_resolved: true
 
 # ============================================
 # PUSHGATEWAY (ENABLED)
@@ -99,7 +104,7 @@ serverFiles:
       - /etc/config/alerting_rules.yml
     # #### Kubernetes endpoint discovery + relabel pipeline for annotated service scraping. ####
     scrape_configs:
-      - job_name: "kubernetes-service-endpoints"
+      - job_name: "payflow-kubernetes-service-endpoints"
         kubernetes_sd_configs:
           - role: endpoints
         relabel_configs:
