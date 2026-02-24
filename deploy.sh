@@ -154,6 +154,7 @@ fi
 helm upgrade --install payflow-prometheus prometheus-community/prometheus \
   -n "$MONITORING_NAMESPACE" \
   -f k8s/helm-values/monitoring/prometheus-values.yaml \
+  --set alertmanager.enabled=false \
   --create-namespace
 
 helm upgrade --install payflow-loki grafana/loki \
@@ -230,10 +231,11 @@ else
   echo "⚠️  Could not find RabbitMQ exporter Service to annotate for Prometheus scraping."
 fi
 
-helm upgrade --install payflow-blackbox-exporter prometheus-community/prometheus-blackbox-exporter \
-  -n "$MONITORING_NAMESPACE" \
-  -f k8s/helm-values/monitoring/blackbox-exporter-values.yaml \
-  --create-namespace
+# NOTE: Disabled for lightweight test VMs to reduce resource usage.
+# helm upgrade --install payflow-blackbox-exporter prometheus-community/prometheus-blackbox-exporter \
+#   -n "$MONITORING_NAMESPACE" \
+#   -f k8s/helm-values/monitoring/blackbox-exporter-values.yaml \
+#   --create-namespace
 
 helm upgrade --install payflow-grafana grafana/grafana \
   -n "$MONITORING_NAMESPACE" \
