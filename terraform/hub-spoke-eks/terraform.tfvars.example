@@ -1,0 +1,21 @@
+project_name = "payflow"
+environment  = "dev"
+region       = "us-east-1"
+
+cluster_name    = "payflow-eks-dev"
+cluster_version = "1.30"
+
+hub_vpc_cidr   = "10.0.0.0/16"
+spoke_vpc_cidr = "10.10.0.0/16"
+
+cluster_endpoint_public_access = false
+
+node_instance_types    = ["t3.medium"]
+node_group_min_size    = 1
+node_group_desired_size = 2
+node_group_max_size    = 4
+
+tags = {
+  Owner      = "platform-team"
+  CostCenter = "engineering"
+}

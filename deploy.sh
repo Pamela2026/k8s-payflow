@@ -1,11 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
+# Deploy Payflow platform components in dependency order.
+# Order matters: shared config -> infrastructure -> migrations -> services -> policies/monitoring.
 NAMESPACE="payflow"
 MONITORING_NAMESPACE="monitoring"
 TIMEOUT="${TIMEOUT:-600s}"
 APPLY_DELAY="${APPLY_DELAY:-2}"
 
+# Apply a manifest if it exists; missing files are treated as optional.
 apply_file() {
   local file="$1"
 
@@ -19,6 +22,7 @@ apply_file() {
   sleep "$APPLY_DELAY"
 }
 
+# Wait for a workload to become ready, with extra diagnostics for Jobs.
 wait_rollout() {
   local kind="$1"   # deploy | sts | job
   local name="$2"
@@ -57,7 +61,7 @@ echo "🗂️ Config and secrets..."
 apply_file "k8s/configmaps/app-config.yaml"
 apply_file "k8s/configmaps/db-migrations.yaml"
 
-# Only apply secrets file if it exists AND doesn't contain placeholder text
+# Skip secret manifests that still contain template placeholders.
 if [[ -f "k8s/secrets/db-secrets.yaml" ]] && grep -q "<base64-encoded" "k8s/secrets/db-secrets.yaml"; then
   echo "⚠️  Skipping k8s/secrets/db-secrets.yaml (placeholders detected)."
 else
@@ -78,8 +82,7 @@ wait_rollout deploy redis
 wait_rollout sts rabbitmq
 
 echo "🧭 Running DB migrations..."
-# Your Flyway error shows you need baselineOnMigrate when schema already has tables.
-# If you already fixed the job manifest, this will work. If not, it will fail and print logs.
+# Re-run migration job only when needed; recreate if an old incomplete job exists.
 if kubectl get job payflow-db-migration -n "$NAMESPACE" >/dev/null 2>&1; then
   status="$(kubectl get job payflow-db-migration -n "$NAMESPACE" -o jsonpath='{.status.succeeded}' 2>/dev/null || echo "")"
   if [[ "${status:-0}" == "1" ]]; then
@@ -137,6 +140,8 @@ apply_file "k8s/ingress/http-ingress.yaml"
 echo "🌐 Deploying metrics-server..."
 apply_file "k8s/infrastructure/metrics-server.yaml"
 
+# Monitoring stack (Helm): core observability services in monitoring namespace,
+# workload exporters in application namespace.
 echo "📊 Deploying monitoring stack with Helm..."
 if ! kubectl get namespace "$MONITORING_NAMESPACE" >/dev/null 2>&1; then
   kubectl create namespace "$MONITORING_NAMESPACE"
