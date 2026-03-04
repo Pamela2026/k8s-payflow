@@ -102,7 +102,7 @@ dashboards:
               "description": "Rolling 5-minute availability computed from HTTP error and total request rates.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "100 * (1 - (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001)))" }
+                { "expr": "100 * (1 - ((sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) or vector(0)) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001)))" }
               ],
               "gridPos": { "x": 0, "y": 0, "w": 8, "h": 4 }
             },
@@ -122,7 +122,7 @@ dashboards:
               "description": "Burn-rate multiplier for a 99.9% availability SLO over a 1-hour window.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"})" }
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"}) or vector(0)" }
               ],
               "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 }
             },
@@ -132,8 +132,8 @@ dashboards:
               "description": "Fast and slow burn-rate trend lines for availability error budget consumption.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "sum(payflow:slo_error_budget_burn:ratio5m{namespace=\"$namespace\"})", "legendFormat": "burn_5m" },
-                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"})", "legendFormat": "burn_1h" }
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio5m{namespace=\"$namespace\"}) or vector(0)", "legendFormat": "burn_5m" },
+                { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"}) or vector(0)", "legendFormat": "burn_1h" }
               ],
               "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
             },
@@ -143,7 +143,7 @@ dashboards:
               "description": "Availability SLI trend over time; target is 99.9%+.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "100 * (1 - (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001)))", "legendFormat": "availability_sli_pct" }
+                { "expr": "100 * (1 - ((sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) or vector(0)) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001)))", "legendFormat": "availability_sli_pct" }
               ],
               "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
             },
@@ -163,7 +163,7 @@ dashboards:
               "description": "Percent of 5xx responses across all HTTP traffic in the selected namespace.",
               "datasource": "Prometheus",
               "targets": [
-                { "expr": "100 * (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001))", "legendFormat": "error_rate_pct" }
+                { "expr": "100 * ((sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) or vector(0)) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001))", "legendFormat": "error_rate_pct" }
               ],
               "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
             }
