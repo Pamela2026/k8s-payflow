@@ -386,16 +386,16 @@ serverFiles:
           - alert: PayflowHighCPUThrottling
             expr: |
               (
-                sum(rate(container_cpu_cfs_throttled_periods_total{namespace="payflow",container!=""}[5m]))
+                sum by (pod) (rate(container_cpu_cfs_throttled_periods_total{namespace="payflow",container!=""}[5m]))
                 /
-                sum(rate(container_cpu_cfs_periods_total{namespace="payflow",container!=""}[5m]))
+                clamp_min(sum by (pod) (rate(container_cpu_cfs_periods_total{namespace="payflow",container!=""}[5m])), 0.001)
               ) > 0.25
             for: 10m
             labels:
               severity: warning
             annotations:
-              summary: "High CPU throttling detected"
-              description: "CPU throttling above 25%. CPU limits may be too low."
+              summary: "High CPU throttling detected (pod: {{ $labels.pod }})"
+              description: "CPU throttling above 25% for pod {{ $labels.pod }}. CPU limits may be too low."
           - alert: PayflowCPUUsageNearLimit
             expr: |
               (
@@ -450,6 +450,171 @@ serverFiles:
             annotations:
               summary: "Node memory pressure detected"
               description: "Node memory usage is above 90%."
+      - name: payflow.dependencies
+        rules:
+          # #### Dependency health alerts consumed by the Data Dependencies dashboard row. ####
+          - alert: PostgresDependencyDown
+            expr: |
+              max(pg_up{namespace="payflow"}) == 0
+              or
+              absent(pg_up{namespace="payflow"})
+            for: 3m
+            labels:
+              severity: critical
+              service: postgres
+              dependency: postgres
+            annotations:
+              summary: "Postgres dependency is unavailable"
+              description: "postgres-exporter reports PostgreSQL as down or the metric is missing."
+          - alert: PostgresConnectionsHigh
+            expr: |
+              100 * (
+                sum(pg_stat_database_numbackends{namespace="payflow",datname="payflow"})
+                /
+                clamp_min((max(pg_settings_max_connections{namespace="payflow"}) or vector(100)), 1)
+              ) > 70
+            for: 10m
+            labels:
+              severity: warning
+              service: postgres
+              dependency: postgres
+            annotations:
+              summary: "Postgres connection usage above 70%"
+              description: "Connection usage is high relative to max_connections for payflow DB."
+          - alert: PostgresConnectionsCritical
+            expr: |
+              100 * (
+                sum(pg_stat_database_numbackends{namespace="payflow",datname="payflow"})
+                /
+                clamp_min((max(pg_settings_max_connections{namespace="payflow"}) or vector(100)), 1)
+              ) > 85
+            for: 5m
+            labels:
+              severity: critical
+              service: postgres
+              dependency: postgres
+            annotations:
+              summary: "Postgres connection usage above 85%"
+              description: "Postgres is close to exhausting connection capacity."
+          - alert: RedisDependencyDown
+            expr: |
+              max(redis_up{namespace="payflow"}) == 0
+              or
+              absent(redis_up{namespace="payflow"})
+            for: 3m
+            labels:
+              severity: critical
+              service: redis
+              dependency: redis
+            annotations:
+              summary: "Redis dependency is unavailable"
+              description: "redis-exporter reports Redis as down or the metric is missing."
+          - alert: RedisMemoryUsageHigh
+            expr: |
+              (
+                100 * (
+                  max(redis_memory_used_bytes{namespace="payflow"})
+                  /
+                  max(redis_memory_max_bytes{namespace="payflow"})
+                )
+              ) > 75
+              and on()
+              (max(redis_memory_max_bytes{namespace="payflow"}) > 0)
+            for: 10m
+            labels:
+              severity: warning
+              service: redis
+              dependency: redis
+            annotations:
+              summary: "Redis memory usage above 75%"
+              description: "Redis is approaching maxmemory; writes may fail with noeviction policy."
+          - alert: RedisMemoryUsageCritical
+            expr: |
+              (
+                100 * (
+                  max(redis_memory_used_bytes{namespace="payflow"})
+                  /
+                  max(redis_memory_max_bytes{namespace="payflow"})
+                )
+              ) > 90
+              and on()
+              (max(redis_memory_max_bytes{namespace="payflow"}) > 0)
+            for: 5m
+            labels:
+              severity: critical
+              service: redis
+              dependency: redis
+            annotations:
+              summary: "Redis memory usage above 90%"
+              description: "Redis is near maxmemory; idempotency writes are at risk of OOM rejections."
+          - alert: RedisEvictionsDetected
+            expr: |
+              increase(redis_evicted_keys_total{namespace="payflow"}[10m]) > 0
+            for: 2m
+            labels:
+              severity: critical
+              service: redis
+              dependency: redis
+            annotations:
+              summary: "Redis evictions detected"
+              description: "Evictions should be zero for idempotency safety; investigate Redis policy/capacity."
+          - alert: RabbitMQDependencyDown
+            expr: |
+              max(rabbitmq_up{namespace="payflow"}) == 0
+              or
+              absent(rabbitmq_up{namespace="payflow"})
+            for: 3m
+            labels:
+              severity: critical
+              service: rabbitmq
+              dependency: rabbitmq
+            annotations:
+              summary: "RabbitMQ dependency is unavailable"
+              description: "rabbitmq-exporter reports RabbitMQ as down or the metric is missing."
+          - alert: RabbitMQQueueReadyHigh
+            expr: |
+              sum(rabbitmq_queue_messages_ready{namespace="payflow"}) > 100
+            for: 10m
+            labels:
+              severity: warning
+              service: rabbitmq
+              dependency: rabbitmq
+            annotations:
+              summary: "RabbitMQ ready queue backlog is high"
+              description: "Ready messages are accumulating; consumers may be falling behind."
+          - alert: RabbitMQQueueReadyCritical
+            expr: |
+              sum(rabbitmq_queue_messages_ready{namespace="payflow"}) > 500
+            for: 5m
+            labels:
+              severity: critical
+              service: rabbitmq
+              dependency: rabbitmq
+            annotations:
+              summary: "RabbitMQ ready queue backlog is critical"
+              description: "Large ready-message backlog indicates likely processing delay/user impact."
+          - alert: RabbitMQUnackedHigh
+            expr: |
+              sum(rabbitmq_queue_messages_unacked{namespace="payflow"}) > 100
+            for: 10m
+            labels:
+              severity: warning
+              service: rabbitmq
+              dependency: rabbitmq
+            annotations:
+              summary: "RabbitMQ unacked messages are high"
+              description: "Consumers are holding many in-flight messages; possible slow processing."
+          - alert: RabbitMQUnackedCritical
+            expr: |
+              sum(rabbitmq_queue_messages_unacked{namespace="payflow"}) > 300
+            for: 5m
+            labels:
+              severity: critical
+              service: rabbitmq
+              dependency: rabbitmq
+            annotations:
+              summary: "RabbitMQ unacked messages are critical"
+              description: "In-flight message count is very high; consumer bottleneck likely."
       - name: payflow.blackbox
         rules:
           - alert: PayflowBlackboxProbeFailure

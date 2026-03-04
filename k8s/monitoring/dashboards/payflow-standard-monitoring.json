@@ -58,13 +58,13 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == 1)"
+          "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\",job=~\"payflow-kubernetes-service-endpoints|blackbox-http\"} == 1)"
         }
       ],
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 6,
+        "w": 8,
         "h": 4
       }
     },
@@ -75,13 +75,13 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == bool 0) or vector(0)"
+          "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\",job=~\"payflow-kubernetes-service-endpoints|blackbox-http\"} == 0) or vector(0)"
         }
       ],
       "gridPos": {
-        "x": 6,
+        "x": 8,
         "y": 1,
-        "w": 6,
+        "w": 8,
         "h": 4
       }
     },
@@ -92,13 +92,13 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum(kube_pod_status_ready{namespace=\"$namespace\",condition=\"true\"})"
+          "expr": "sum(max by (namespace, pod) (kube_pod_status_ready{namespace=\"$namespace\",condition=\"true\"}))"
         }
       ],
       "gridPos": {
-        "x": 12,
+        "x": 16,
         "y": 1,
-        "w": 6,
+        "w": 8,
         "h": 4
       }
     },
@@ -113,10 +113,21 @@
         }
       ],
       "gridPos": {
-        "x": 18,
-        "y": 1,
-        "w": 6,
+        "x": 0,
+        "y": 5,
+        "w": 8,
         "h": 4
+      }
+    },
+    {
+      "type": "row",
+      "title": "Targets & Replicas",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 1
       }
     },
     {
@@ -151,10 +162,45 @@
         }
       ],
       "gridPos": {
-        "x": 0,
+        "x": 8,
         "y": 5,
-        "w": 6,
+        "w": 8,
         "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Pods Pending",
+      "description": "Count of pods currently in Pending phase in the selected namespace.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Pending\"})"
+        }
+      ],
+      "gridPos": {
+        "x": 16,
+        "y": 5,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "type": "table",
+      "title": "Down Target Drilldown",
+      "description": "Only targets currently down (up == 0) for fast triage.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "up{namespace=\"$namespace\",service=~\"$service\",job=~\"payflow-kubernetes-service-endpoints|blackbox-http\"} == 0",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 6
       }
     },
     {
@@ -173,9 +219,9 @@
         }
       ],
       "gridPos": {
-        "x": 6,
-        "y": 5,
-        "w": 18,
+        "x": 12,
+        "y": 9,
+        "w": 12,
         "h": 6
       }
     },
@@ -192,7 +238,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 15,
         "w": 12,
         "h": 8
       }
@@ -210,7 +256,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 11,
+        "y": 15,
         "w": 12,
         "h": 8
       }
@@ -221,7 +267,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 19,
+        "y": 23,
         "w": 24,
         "h": 1
       }
@@ -239,8 +285,26 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 20,
-        "w": 12,
+        "y": 24,
+        "w": 8,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Auth/Ratelimit Error Rate by Service (%)",
+      "description": "401/403/429 only: auth and rate-limit errors by service.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (sum by (service, status_code) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"401|403|429\"}[5m])) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
+          "legendFormat": "{{service}} {{status_code}}"
+        }
+      ],
+      "gridPos": {
+        "x": 8,
+        "y": 24,
+        "w": 16,
         "h": 8
       }
     },
@@ -256,9 +320,9 @@
         }
       ],
       "gridPos": {
-        "x": 12,
-        "y": 20,
-        "w": 12,
+        "x": 0,
+        "y": 32,
+        "w": 8,
         "h": 8
       }
     },
@@ -274,9 +338,9 @@
         }
       ],
       "gridPos": {
-        "x": 0,
-        "y": 28,
-        "w": 24,
+        "x": 8,
+        "y": 32,
+        "w": 8,
         "h": 8
       }
     },
@@ -347,12 +411,12 @@
     },
     {
       "type": "timeseries",
-      "title": "CPU Usage as % of Limits by Pod",
-      "description": "Pod CPU usage divided by configured CPU limits.",
+      "title": "CPU Throttled Time by Pod (cores)",
+      "description": "CPU time denied due to throttling; higher values mean more CPU time lost.",
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "100 * (sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"cpu\"}), 0.001))",
+          "expr": "sum by (pod) (rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]))",
           "legendFormat": "{{pod}}"
         }
       ],
@@ -377,6 +441,24 @@
       "gridPos": {
         "x": 0,
         "y": 53,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Usage as % of Limits by Pod",
+      "description": "Pod CPU usage divided by configured CPU limits.",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"cpu\"}), 0.001))",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 61,
         "w": 12,
         "h": 8
       }
@@ -412,7 +494,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 61,
+        "y": 69,
         "w": 24,
         "h": 8
       }
@@ -423,7 +505,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 69,
+        "y": 77,
         "w": 24,
         "h": 1
       }
@@ -441,7 +523,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 70,
+        "y": 78,
         "w": 12,
         "h": 8
       }
@@ -459,7 +541,7 @@
       ],
       "gridPos": {
         "x": 12,
-        "y": 70,
+        "y": 78,
         "w": 12,
         "h": 8
       }
@@ -470,7 +552,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 78,
+        "y": 86,
         "w": 24,
         "h": 1
       }
@@ -487,7 +569,7 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 79,
+        "y": 87,
         "w": 6,
         "h": 4
       }
@@ -504,7 +586,7 @@
       ],
       "gridPos": {
         "x": 6,
-        "y": 79,
+        "y": 87,
         "w": 6,
         "h": 4
       }
@@ -516,13 +598,13 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum by (alertname) (ALERTS{namespace=\"$namespace\",alertstate=\"firing\"}) or vector(0)",
+          "expr": "sum by (alertname) (ALERTS{namespace=\"$namespace\",alertstate=\"firing\"})",
           "legendFormat": "{{alertname}}"
         }
       ],
       "gridPos": {
         "x": 12,
-        "y": 79,
+        "y": 87,
         "w": 12,
         "h": 4
       }
@@ -533,7 +615,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 83,
+        "y": 91,
         "w": 24,
         "h": 1
       }
@@ -545,7 +627,7 @@
       "datasource": "Loki",
       "targets": [
         {
-          "expr": "{namespace=\"$namespace\"}"
+          "expr": "{namespace=\"$namespace\"} |~ \"(?i)\\\\b(critical|error|warn|warning)\\\\b\""
         }
       ],
       "options": {
@@ -555,7 +637,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 84,
+        "y": 92,
         "w": 24,
         "h": 10
       }
@@ -568,7 +650,7 @@
       "datasource": "Prometheus",
       "gridPos": {
         "x": 0,
-        "y": 94,
+        "y": 102,
         "w": 24,
         "h": 8
       },

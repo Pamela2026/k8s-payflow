@@ -235,13 +235,13 @@ dashboards:
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == 1)"
+                  "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\",job=~\"payflow-kubernetes-service-endpoints|blackbox-http\"} == 1)"
                 }
               ],
               "gridPos": {
                 "x": 0,
                 "y": 1,
-                "w": 4,
+                "w": 8,
                 "h": 4
               }
             },
@@ -252,13 +252,13 @@ dashboards:
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\"} == bool 0) or vector(0)"
+                  "expr": "sum(up{namespace=\"$namespace\",service=~\"$service\",job=~\"payflow-kubernetes-service-endpoints|blackbox-http\"} == 0) or vector(0)"
                 }
               ],
               "gridPos": {
-                "x": 4,
+                "x": 8,
                 "y": 1,
-                "w": 4,
+                "w": 8,
                 "h": 4
               }
             },
@@ -269,13 +269,13 @@ dashboards:
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "sum(kube_pod_status_ready{namespace=\"$namespace\",condition=\"true\"})"
+                  "expr": "sum(max by (namespace, pod) (kube_pod_status_ready{namespace=\"$namespace\",condition=\"true\"}))"
                 }
               ],
               "gridPos": {
-                "x": 8,
+                "x": 16,
                 "y": 1,
-                "w": 4,
+                "w": 8,
                 "h": 4
               }
             },
@@ -290,10 +290,21 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 12,
-                "y": 1,
-                "w": 4,
+                "x": 0,
+                "y": 5,
+                "w": 8,
                 "h": 4
+              }
+            },
+            {
+              "type": "row",
+              "title": "Targets & Replicas",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 4,
+                "w": 24,
+                "h": 1
               }
             },
             {
@@ -328,9 +339,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 0,
+                "x": 8,
                 "y": 5,
-                "w": 4,
+                "w": 8,
                 "h": 4
               }
             },
@@ -345,9 +356,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 4,
+                "x": 16,
                 "y": 5,
-                "w": 4,
+                "w": 8,
                 "h": 4
               }
             },
@@ -358,14 +369,14 @@ dashboards:
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "up{namespace=\"$namespace\",service=~\"$service\"} == bool 0",
+                  "expr": "up{namespace=\"$namespace\",service=~\"$service\",job=~\"payflow-kubernetes-service-endpoints|blackbox-http\"} == 0",
                   "instant": true
                 }
               ],
               "gridPos": {
-                "x": 8,
-                "y": 5,
-                "w": 8,
+                "x": 0,
+                "y": 9,
+                "w": 12,
                 "h": 6
               }
             },
@@ -385,9 +396,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 16,
-                "y": 5,
-                "w": 8,
+                "x": 12,
+                "y": 9,
+                "w": 12,
                 "h": 6
               }
             },
@@ -404,7 +415,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 11,
+                "y": 15,
                 "w": 12,
                 "h": 8
               }
@@ -422,7 +433,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 12,
-                "y": 11,
+                "y": 15,
                 "w": 12,
                 "h": 8
               }
@@ -433,7 +444,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 19,
+                "y": 23,
                 "w": 24,
                 "h": 1
               }
@@ -451,25 +462,25 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 20,
+                "y": 24,
                 "w": 8,
                 "h": 8
               }
             },
             {
               "type": "timeseries",
-              "title": "4xx Error Rate by Service (%)",
-              "description": "Client/auth/routing class errors to catch misconfigurations and upstream contract issues.",
+              "title": "Auth/Ratelimit Error Rate by Service (%)",
+              "description": "401/403/429 only: auth and rate-limit errors by service.",
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "100 * (((sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"4..\"}[5m])) ) or on(service) (0 * sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])))) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
-                  "legendFormat": "{{service}}"
+                  "expr": "100 * (sum by (service, status_code) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"401|403|429\"}[5m])) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
+                  "legendFormat": "{{service}} {{status_code}}"
                 }
               ],
               "gridPos": {
                 "x": 8,
-                "y": 20,
+                "y": 24,
                 "w": 16,
                 "h": 8
               }
@@ -487,7 +498,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 28,
+                "y": 32,
                 "w": 8,
                 "h": 8
               }
@@ -505,29 +516,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 8,
-                "y": 28,
-                "w": 8,
-                "h": 8
-              }
-            },
-            {
-              "type": "timeseries",
-              "title": "4xx & 429 Surge vs 1h Baseline",
-              "description": "Unusual surge ratio. Values > 2 mean 5m rate is more than 2x the 1h baseline.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"4..\"}[5m])) / clamp_min(sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"4..\"}[1h])), 0.0001)",
-                  "legendFormat": "4xx_surge_ratio"
-                },
-                {
-                  "expr": "sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=\"429\"}[5m])) / clamp_min(sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=\"429\"}[1h])), 0.0001)",
-                  "legendFormat": "429_surge_ratio"
-                }
-              ],
-              "gridPos": {
-                "x": 16,
-                "y": 28,
+                "y": 32,
                 "w": 8,
                 "h": 8
               }
@@ -599,12 +588,12 @@ dashboards:
             },
             {
               "type": "timeseries",
-              "title": "CPU Usage as % of Limits by Pod",
-              "description": "Pod CPU usage divided by configured CPU limits.",
+              "title": "CPU Throttled Time by Pod (cores)",
+              "description": "CPU time denied due to throttling; higher values mean more CPU time lost.",
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "100 * (sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"cpu\"}), 0.001))",
+                  "expr": "sum by (pod) (rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]))",
                   "legendFormat": "{{pod}}"
                 }
               ],
@@ -629,6 +618,24 @@ dashboards:
               "gridPos": {
                 "x": 0,
                 "y": 53,
+                "w": 12,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "CPU Usage as % of Limits by Pod",
+              "description": "Pod CPU usage divided by configured CPU limits.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "100 * (sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m])) / clamp_min(sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"cpu\"}), 0.001))",
+                  "legendFormat": "{{pod}}"
+                }
+              ],
+              "gridPos": {
+                "x": 12,
+                "y": 61,
                 "w": 12,
                 "h": 8
               }
@@ -664,7 +671,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 61,
+                "y": 69,
                 "w": 24,
                 "h": 8
               }
@@ -675,7 +682,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 69,
+                "y": 77,
                 "w": 24,
                 "h": 1
               }
@@ -693,7 +700,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 70,
+                "y": 78,
                 "w": 12,
                 "h": 8
               }
@@ -711,7 +718,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 12,
-                "y": 70,
+                "y": 78,
                 "w": 12,
                 "h": 8
               }
@@ -722,7 +729,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 78,
+                "y": 86,
                 "w": 24,
                 "h": 1
               }
@@ -739,7 +746,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 79,
+                "y": 87,
                 "w": 6,
                 "h": 4
               }
@@ -756,7 +763,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 6,
-                "y": 79,
+                "y": 87,
                 "w": 6,
                 "h": 4
               }
@@ -774,7 +781,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 12,
-                "y": 79,
+                "y": 87,
                 "w": 12,
                 "h": 4
               }
@@ -785,7 +792,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 83,
+                "y": 91,
                 "w": 24,
                 "h": 1
               }
@@ -807,7 +814,7 @@ dashboards:
               },
               "gridPos": {
                 "x": 0,
-                "y": 84,
+                "y": 92,
                 "w": 24,
                 "h": 10
               }
@@ -820,7 +827,7 @@ dashboards:
               "datasource": "Prometheus",
               "gridPos": {
                 "x": 0,
-                "y": 94,
+                "y": 102,
                 "w": 24,
                 "h": 8
               },
@@ -838,7 +845,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 102,
+                "y": 110,
                 "w": 24,
                 "h": 1
               }
@@ -855,7 +862,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 103,
+                "y": 111,
                 "w": 6,
                 "h": 4
               }
@@ -865,14 +872,20 @@ dashboards:
               "title": "Redis Memory Usage (%)",
               "description": "Redis memory usage as a percentage of configured max memory.",
               "datasource": "Prometheus",
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "targets": [
                 {
-                  "expr": "100 * (max(redis_memory_used_bytes{namespace=\"$namespace\"}) / clamp_min(max(redis_memory_max_bytes{namespace=\"$namespace\"}), 1))"
+                  "expr": "((100 * (max(redis_memory_used_bytes{namespace=\"$namespace\"}) / max(redis_memory_max_bytes{namespace=\"$namespace\"}))) and on() (max(redis_memory_max_bytes{namespace=\"$namespace\"}) > 0)) or vector(0)"
                 }
               ],
               "gridPos": {
                 "x": 6,
-                "y": 103,
+                "y": 111,
                 "w": 6,
                 "h": 4
               }
@@ -889,7 +902,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 12,
-                "y": 103,
+                "y": 111,
                 "w": 6,
                 "h": 4
               }
@@ -906,7 +919,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 18,
-                "y": 103,
+                "y": 111,
                 "w": 6,
                 "h": 4
               }
@@ -918,13 +931,13 @@ dashboards:
               "datasource": "Prometheus",
               "gridPos": {
                 "x": 0,
-                "y": 107,
+                "y": 115,
                 "w": 24,
                 "h": 8
               },
               "targets": [
                 {
-                  "expr": "ALERTS{namespace=\"$namespace\",alertstate=~\"firing|pending\",alertname=~\"Postgres.*|Redis.*|RabbitMQ.*|UnusualPostgres.*|UnusualRabbitMQ.*\"}",
+                  "expr": "(ALERTS{namespace=\"$namespace\",alertstate=~\"firing|pending\",dependency=~\"postgres|redis|rabbitmq\"}) or (ALERTS{namespace=\"$namespace\",alertstate=~\"firing|pending\",alertname=~\"Postgres.*|Redis.*|RabbitMQ.*|UnusualPostgres.*|UnusualRabbitMQ.*\"})",
                   "format": "table",
                   "instant": true
                 }

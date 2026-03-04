@@ -35,6 +35,11 @@ spec:
         args:
           - "--appendonly"
           - "yes"
+          # #### Redis internal memory cap below pod limit to avoid OOMKills ####
+          - "--maxmemory"
+          - "192mb"
+          - "--maxmemory-policy"
+          - "noeviction"
 
         volumeMounts:
         - name: redis-data
