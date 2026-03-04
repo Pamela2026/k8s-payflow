@@ -98,102 +98,13 @@ dashboards:
           "panels": [
             {
               "type": "stat",
-              "title": "Pods Running",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Running\"})" }
-              ],
-              "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 }
-            },
-            {
-              "type": "stat",
-              "title": "Pods Pending",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Pending\"})" }
-              ],
-              "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 }
-            },
-            {
-              "type": "stat",
-              "title": "Restarts (1h)",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\"}[1h]))" }
-              ],
-              "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 }
-            },
-            {
-              "type": "stat",
-              "title": "Pods Failed",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Failed\"})" }
-              ],
-              "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 }
-            },
-            {
-              "type": "timeseries",
-              "title": "CPU Usage (cores)",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",pod!=\"\"}[5m]))" }
-              ],
-              "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "Memory Usage (bytes)",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"\",pod!=\"\"})" }
-              ],
-              "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "CPU Requests vs Limits (cores)",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(kube_pod_container_resource_requests{namespace=\"$namespace\",resource=\"cpu\"})", "legendFormat": "requests" },
-                { "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"cpu\"})", "legendFormat": "limits" }
-              ],
-              "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 }
-            },
-            {
-              "type": "timeseries",
-              "title": "Memory Requests vs Limits (bytes)",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(kube_pod_container_resource_requests{namespace=\"$namespace\",resource=\"memory\"})", "legendFormat": "requests" },
-                { "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",resource=\"memory\"})", "legendFormat": "limits" }
-              ],
-              "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
-            },
-            {
-              "type": "logs",
-              "title": "Namespace Logs (Loki)",
-              "description": "Recent logs from Loki scoped to the selected namespace.",
-              "datasource": "Loki",
-              "targets": [
-                { "expr": "{namespace=\"$namespace\"}" }
-              ],
-              "options": {
-                "showLabels": true,
-                "showTime": true,
-                "sortOrder": "Descending"
-              },
-              "gridPos": { "x": 0, "y": 32, "w": 24, "h": 10 }
-            },
-            {
-              "type": "stat",
               "title": "Availability SLI (5m, %)",
               "description": "Rolling 5-minute availability computed from HTTP error and total request rates.",
               "datasource": "Prometheus",
               "targets": [
                 { "expr": "100 * (1 - (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001)))" }
               ],
-              "gridPos": { "x": 0, "y": 20, "w": 6, "h": 4 }
+              "gridPos": { "x": 0, "y": 0, "w": 8, "h": 4 }
             },
             {
               "type": "stat",
@@ -203,7 +114,7 @@ dashboards:
               "targets": [
                 { "expr": "100 * (sum(payflow:sli_latency_le_500ms:ratio5m{namespace=\"$namespace\"} * payflow:http_requests:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001))" }
               ],
-              "gridPos": { "x": 6, "y": 20, "w": 6, "h": 4 }
+              "gridPos": { "x": 8, "y": 0, "w": 8, "h": 4 }
             },
             {
               "type": "stat",
@@ -213,17 +124,7 @@ dashboards:
               "targets": [
                 { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"})" }
               ],
-              "gridPos": { "x": 12, "y": 20, "w": 6, "h": 4 }
-            },
-            {
-              "type": "stat",
-              "title": "HTTP Traffic (rps)",
-              "description": "Total HTTP request throughput in requests per second over 5 minutes.",
-              "datasource": "Prometheus",
-              "targets": [
-                { "expr": "sum(payflow:http_requests:rate5m{namespace=\"$namespace\"})" }
-              ],
-              "gridPos": { "x": 18, "y": 20, "w": 6, "h": 4 }
+              "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 }
             },
             {
               "type": "timeseries",
@@ -234,7 +135,27 @@ dashboards:
                 { "expr": "sum(payflow:slo_error_budget_burn:ratio5m{namespace=\"$namespace\"})", "legendFormat": "burn_5m" },
                 { "expr": "sum(payflow:slo_error_budget_burn:ratio1h{namespace=\"$namespace\"})", "legendFormat": "burn_1h" }
               ],
-              "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
+              "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
+            },
+            {
+              "type": "timeseries",
+              "title": "Availability SLI Trend (5m, %)",
+              "description": "Availability SLI trend over time; target is 99.9%+.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "100 * (1 - (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001)))", "legendFormat": "availability_sli_pct" }
+              ],
+              "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
+            },
+            {
+              "type": "timeseries",
+              "title": "Latency SLI <=500ms Trend (5m, %)",
+              "description": "Latency SLI trend over time; target is 95%+ of requests <=500ms.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "100 * (sum(payflow:sli_latency_le_500ms:ratio5m{namespace=\"$namespace\"} * payflow:http_requests:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001))", "legendFormat": "latency_sli_pct" }
+              ],
+              "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 }
             },
             {
               "type": "timeseries",
@@ -244,7 +165,7 @@ dashboards:
               "targets": [
                 { "expr": "100 * (sum(payflow:http_requests_errors:rate5m{namespace=\"$namespace\"}) / clamp_min(sum(payflow:http_requests:rate5m{namespace=\"$namespace\"}), 0.001))", "legendFormat": "error_rate_pct" }
               ],
-              "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
+              "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 }
             }
           ]
         }
@@ -320,7 +241,7 @@ dashboards:
               "gridPos": {
                 "x": 0,
                 "y": 1,
-                "w": 6,
+                "w": 4,
                 "h": 4
               }
             },
@@ -335,9 +256,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 6,
+                "x": 4,
                 "y": 1,
-                "w": 6,
+                "w": 4,
                 "h": 4
               }
             },
@@ -352,9 +273,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 12,
+                "x": 8,
                 "y": 1,
-                "w": 6,
+                "w": 4,
                 "h": 4
               }
             },
@@ -369,9 +290,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 18,
+                "x": 12,
                 "y": 1,
-                "w": 6,
+                "w": 4,
                 "h": 4
               }
             },
@@ -409,8 +330,43 @@ dashboards:
               "gridPos": {
                 "x": 0,
                 "y": 5,
-                "w": 6,
+                "w": 4,
                 "h": 4
+              }
+            },
+            {
+              "type": "stat",
+              "title": "Pods Pending",
+              "description": "Count of pods currently in Pending phase in the selected namespace.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(kube_pod_status_phase{namespace=\"$namespace\",phase=\"Pending\"})"
+                }
+              ],
+              "gridPos": {
+                "x": 4,
+                "y": 5,
+                "w": 4,
+                "h": 4
+              }
+            },
+            {
+              "type": "table",
+              "title": "Down Target Drilldown",
+              "description": "Only targets currently down (up == 0) for fast triage.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "up{namespace=\"$namespace\",service=~\"$service\"} == bool 0",
+                  "instant": true
+                }
+              ],
+              "gridPos": {
+                "x": 8,
+                "y": 5,
+                "w": 8,
+                "h": 6
               }
             },
             {
@@ -429,9 +385,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 6,
+                "x": 16,
                 "y": 5,
-                "w": 18,
+                "w": 8,
                 "h": 6
               }
             },
@@ -496,7 +452,25 @@ dashboards:
               "gridPos": {
                 "x": 0,
                 "y": 20,
-                "w": 12,
+                "w": 8,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "4xx Error Rate by Service (%)",
+              "description": "Client/auth/routing class errors to catch misconfigurations and upstream contract issues.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "100 * (((sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"4..\"}[5m])) ) or on(service) (0 * sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])))) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
+                  "legendFormat": "{{service}}"
+                }
+              ],
+              "gridPos": {
+                "x": 8,
+                "y": 20,
+                "w": 16,
                 "h": 8
               }
             },
@@ -512,9 +486,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 12,
-                "y": 20,
-                "w": 12,
+                "x": 0,
+                "y": 28,
+                "w": 8,
                 "h": 8
               }
             },
@@ -530,9 +504,31 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 0,
+                "x": 8,
                 "y": 28,
-                "w": 24,
+                "w": 8,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "4xx & 429 Surge vs 1h Baseline",
+              "description": "Unusual surge ratio. Values > 2 mean 5m rate is more than 2x the 1h baseline.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"4..\"}[5m])) / clamp_min(sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"4..\"}[1h])), 0.0001)",
+                  "legendFormat": "4xx_surge_ratio"
+                },
+                {
+                  "expr": "sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=\"429\"}[5m])) / clamp_min(sum(rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=\"429\"}[1h])), 0.0001)",
+                  "legendFormat": "429_surge_ratio"
+                }
+              ],
+              "gridPos": {
+                "x": 16,
+                "y": 28,
+                "w": 8,
                 "h": 8
               }
             },
@@ -772,7 +768,7 @@ dashboards:
               "datasource": "Prometheus",
               "targets": [
                 {
-                  "expr": "sum by (alertname) (ALERTS{namespace=\"$namespace\",alertstate=\"firing\"}) or vector(0)",
+                  "expr": "sum by (alertname) (ALERTS{namespace=\"$namespace\",alertstate=\"firing\"})",
                   "legendFormat": "{{alertname}}"
                 }
               ],
@@ -801,7 +797,7 @@ dashboards:
               "datasource": "Loki",
               "targets": [
                 {
-                  "expr": "{namespace=\"$namespace\"}"
+                  "expr": "{namespace=\"$namespace\"} |~ \"(?i)\\\\b(critical|error|warn|warning)\\\\b\""
                 }
               ],
               "options": {
@@ -831,6 +827,104 @@ dashboards:
               "targets": [
                 {
                   "expr": "(ALERTS{namespace=\"$namespace\",service=~\"$service\",alertstate=~\"firing|pending\"}) or (ALERTS{namespace=\"$namespace\",service=\"\",alertstate=~\"firing|pending\"}) or (ALERTS{namespace=\"$namespace\",service!~\".+\",alertstate=~\"firing|pending\"})",
+                  "format": "table",
+                  "instant": true
+                }
+              ]
+            },
+            {
+              "type": "row",
+              "title": "Data Dependencies",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 102,
+                "w": 24,
+                "h": 1
+              }
+            },
+            {
+              "type": "stat",
+              "title": "Postgres Active Connections",
+              "description": "Current active PostgreSQL backend connections for the payflow database.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(pg_stat_database_numbackends{namespace=\"$namespace\",datname=\"payflow\"}) or vector(0)"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 103,
+                "w": 6,
+                "h": 4
+              }
+            },
+            {
+              "type": "stat",
+              "title": "Redis Memory Usage (%)",
+              "description": "Redis memory usage as a percentage of configured max memory.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "100 * (max(redis_memory_used_bytes{namespace=\"$namespace\"}) / clamp_min(max(redis_memory_max_bytes{namespace=\"$namespace\"}), 1))"
+                }
+              ],
+              "gridPos": {
+                "x": 6,
+                "y": 103,
+                "w": 6,
+                "h": 4
+              }
+            },
+            {
+              "type": "stat",
+              "title": "RabbitMQ Queue Ready",
+              "description": "Total ready messages waiting for consumers in RabbitMQ.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(rabbitmq_queue_messages_ready{namespace=\"$namespace\"}) or vector(0)"
+                }
+              ],
+              "gridPos": {
+                "x": 12,
+                "y": 103,
+                "w": 6,
+                "h": 4
+              }
+            },
+            {
+              "type": "stat",
+              "title": "RabbitMQ Unacked Messages",
+              "description": "Total unacknowledged messages currently in-flight to consumers.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(rabbitmq_queue_messages_unacked{namespace=\"$namespace\"}) or vector(0)"
+                }
+              ],
+              "gridPos": {
+                "x": 18,
+                "y": 103,
+                "w": 6,
+                "h": 4
+              }
+            },
+            {
+              "type": "table",
+              "title": "Data Dependency ALERTS",
+              "description": "Firing or pending alerts for Postgres, Redis, and RabbitMQ dependencies.",
+              "datasource": "Prometheus",
+              "gridPos": {
+                "x": 0,
+                "y": 107,
+                "w": 24,
+                "h": 8
+              },
+              "targets": [
+                {
+                  "expr": "ALERTS{namespace=\"$namespace\",alertstate=~\"firing|pending\",alertname=~\"Postgres.*|Redis.*|RabbitMQ.*|UnusualPostgres.*|UnusualRabbitMQ.*\"}",
                   "format": "table",
                   "instant": true
                 }
