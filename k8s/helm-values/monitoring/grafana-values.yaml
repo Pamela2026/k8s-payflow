@@ -297,17 +297,6 @@ dashboards:
               }
             },
             {
-              "type": "row",
-              "title": "Targets & Replicas",
-              "collapsed": false,
-              "gridPos": {
-                "x": 0,
-                "y": 4,
-                "w": 24,
-                "h": 1
-              }
-            },
-            {
               "type": "stat",
               "title": "Replica Gap",
               "description": "Total desired replicas minus available replicas. Any value > 0 means pods are missing.",
@@ -481,7 +470,7 @@ dashboards:
               "gridPos": {
                 "x": 8,
                 "y": 24,
-                "w": 16,
+                "w": 8,
                 "h": 8
               }
             },
@@ -497,8 +486,8 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 0,
-                "y": 32,
+                "x": 16,
+                "y": 24,
                 "w": 8,
                 "h": 8
               }
@@ -671,8 +660,8 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 69,
-                "w": 24,
+                "y": 61,
+                "w": 12,
                 "h": 8
               }
             },
@@ -682,7 +671,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 77,
+                "y": 69,
                 "w": 24,
                 "h": 1
               }
@@ -700,7 +689,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 78,
+                "y": 70,
                 "w": 12,
                 "h": 8
               }
@@ -718,7 +707,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 12,
-                "y": 78,
+                "y": 70,
                 "w": 12,
                 "h": 8
               }
@@ -729,7 +718,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 86,
+                "y": 78,
                 "w": 24,
                 "h": 1
               }
@@ -746,7 +735,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 87,
+                "y": 79,
                 "w": 6,
                 "h": 4
               }
@@ -763,7 +752,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 6,
-                "y": 87,
+                "y": 79,
                 "w": 6,
                 "h": 4
               }
@@ -781,7 +770,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 12,
-                "y": 87,
+                "y": 79,
                 "w": 12,
                 "h": 4
               }
@@ -792,7 +781,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 91,
+                "y": 83,
                 "w": 24,
                 "h": 1
               }
@@ -814,7 +803,7 @@ dashboards:
               },
               "gridPos": {
                 "x": 0,
-                "y": 92,
+                "y": 84,
                 "w": 24,
                 "h": 10
               }
@@ -827,7 +816,7 @@ dashboards:
               "datasource": "Prometheus",
               "gridPos": {
                 "x": 0,
-                "y": 102,
+                "y": 94,
                 "w": 24,
                 "h": 8
               },
@@ -845,7 +834,7 @@ dashboards:
               "collapsed": false,
               "gridPos": {
                 "x": 0,
-                "y": 110,
+                "y": 102,
                 "w": 24,
                 "h": 1
               }
@@ -862,7 +851,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 0,
-                "y": 111,
+                "y": 103,
                 "w": 6,
                 "h": 4
               }
@@ -885,7 +874,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 6,
-                "y": 111,
+                "y": 103,
                 "w": 6,
                 "h": 4
               }
@@ -902,7 +891,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 12,
-                "y": 111,
+                "y": 103,
                 "w": 6,
                 "h": 4
               }
@@ -919,7 +908,7 @@ dashboards:
               ],
               "gridPos": {
                 "x": 18,
-                "y": 111,
+                "y": 103,
                 "w": 6,
                 "h": 4
               }
@@ -931,7 +920,7 @@ dashboards:
               "datasource": "Prometheus",
               "gridPos": {
                 "x": 0,
-                "y": 115,
+                "y": 107,
                 "w": 24,
                 "h": 8
               },
@@ -942,6 +931,140 @@ dashboards:
                   "instant": true
                 }
               ]
+            },
+            {
+              "type": "row",
+              "title": "Wallet Business KPIs",
+              "collapsed": false,
+              "gridPos": {
+                "x": 0,
+                "y": 115,
+                "w": 24,
+                "h": 1
+              }
+            },
+            {
+              "type": "stat",
+              "title": "Transfer Success Rate (5m, %)",
+              "description": "Percentage of successful/completed transfers over all transfer attempts.",
+              "datasource": "Prometheus",
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percent",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      { "color": "red", "value": null },
+                      { "color": "yellow", "value": 90 },
+                      { "color": "green", "value": 97 }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "targets": [
+                {
+                  "expr": "((100 * (sum(rate(transfers_total{namespace=\"$namespace\",status=~\"success|completed\"}[5m])) / clamp_min(sum(rate(transfers_total{namespace=\"$namespace\"}[5m])), 0.001))) and on() (sum(rate(transfers_total{namespace=\"$namespace\"}[5m])) > 0)) or vector(100)"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 116,
+                "w": 8,
+                "h": 4
+              }
+            },
+            {
+              "type": "stat",
+              "title": "Transfer Volume (5m)",
+              "description": "Count of successful/completed transfers observed in the last 5 minutes.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(increase(transfers_total{namespace=\"$namespace\",status=~\"success|completed\"}[5m])) or vector(0)"
+                }
+              ],
+              "gridPos": {
+                "x": 8,
+                "y": 116,
+                "w": 8,
+                "h": 4
+              }
+            },
+            {
+              "type": "stat",
+              "title": "Failed Transfers (5m)",
+              "description": "Total failed transfer count over the last 5 minutes.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(increase(failed_transfers_total{namespace=\"$namespace\"}[5m])) or vector(0)"
+                }
+              ],
+              "gridPos": {
+                "x": 16,
+                "y": 116,
+                "w": 8,
+                "h": 4
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "Failed Transfers by Reason (5m)",
+              "description": "Top failure reasons over the last 5 minutes.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "topk(5, sum by (reason) (increase(failed_transfers_total{namespace=\"$namespace\"}[5m])))",
+                  "legendFormat": "{{reason}}"
+                }
+              ],
+              "gridPos": {
+                "x": 0,
+                "y": 120,
+                "w": 8,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "Transaction Queue Depth",
+              "description": "Current backlog in transaction queues.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "max by (queue_name) (queue_depth{namespace=\"$namespace\"}) or vector(0)",
+                  "legendFormat": "{{queue_name}}"
+                }
+              ],
+              "gridPos": {
+                "x": 8,
+                "y": 120,
+                "w": 8,
+                "h": 8
+              }
+            },
+            {
+              "type": "timeseries",
+              "title": "Signup Success vs Failed (5m)",
+              "description": "Signup outcomes in the last 5 minutes.",
+              "datasource": "Prometheus",
+              "targets": [
+                {
+                  "expr": "sum(increase(user_signups_total{namespace=\"$namespace\",status=\"success\"}[5m])) or vector(0)",
+                  "legendFormat": "signup success"
+                },
+                {
+                  "expr": "sum(increase(user_signups_total{namespace=\"$namespace\",status=\"failed\"}[5m])) or vector(0)",
+                  "legendFormat": "signup failed"
+                }
+              ],
+              "gridPos": {
+                "x": 16,
+                "y": 120,
+                "w": 8,
+                "h": 8
+              }
             }
           ],
           "annotations": {

@@ -28,6 +28,7 @@ resources:
 
   - jobs/db-migration-job.yaml
   - jobs/db-backup-cronjob.yaml
+  - jobs/mock-traffic-generator.yaml
   - jobs/pushgateway-metrics.yaml
   - jobs/transaction-timeout-handler.yaml
 

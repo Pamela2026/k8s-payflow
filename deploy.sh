@@ -73,7 +73,7 @@ apply_file "k8s/services/all-services.yaml"
 
 echo "📦 Deploying infrastructure..."
 apply_file "k8s/infrastructure/postgres.yaml"
-apply_file "k8s/deployments/redis.yaml"
+apply_file "k8s/infrastructure/redis.yaml"
 apply_file "k8s/infrastructure/rabbitmq.yaml"
 
 echo "⏳ Waiting for infrastructure to be ready..."
@@ -99,25 +99,25 @@ else
 fi
 
 echo "🔐 Deploying Auth Service..."
-apply_file "k8s/deployments/auth-service.yaml"
+apply_file "k8s/payflow-services/auth-service.yaml"
 wait_rollout deploy auth-service
 
 echo "💰 Deploying Wallet Service..."
-apply_file "k8s/deployments/wallet-service.yaml"
+apply_file "k8s/payflow-services/wallet-service.yaml"
 wait_rollout deploy wallet-service
 
 echo "💳 Deploying Transaction & Notification Services..."
-apply_file "k8s/deployments/transaction-service.yaml"
-apply_file "k8s/deployments/notification-service.yaml"
+apply_file "k8s/payflow-services/transaction-service.yaml"
+apply_file "k8s/payflow-services/notification-service.yaml"
 wait_rollout deploy transaction-service
 wait_rollout deploy notification-service
 
 echo "🌐 Deploying API Gateway..."
-apply_file "k8s/deployments/api-gateway.yaml"
+apply_file "k8s/payflow-services/api-gateway.yaml"
 wait_rollout deploy api-gateway
 
 echo "🖥️ Deploying Frontend..."
-apply_file "k8s/deployments/frontend.yaml"
+apply_file "k8s/payflow-services/frontend.yaml"
 wait_rollout deploy frontend
 
 echo "🛡️ Policies..."
@@ -132,6 +132,8 @@ apply_file "k8s/autoscaling/hpa.yaml"
 echo "🕒 Background jobs..."
 apply_file "k8s/jobs/transaction-timeout-handler.yaml"
 apply_file "k8s/jobs/db-backup-cronjob.yaml"
+apply_file "k8s/jobs/mock-traffic-generator.yaml"
+wait_rollout deploy payflow-mock-traffic-generator
 
 
 echo "🌐 Deploying ingress..."

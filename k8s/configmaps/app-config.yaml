@@ -22,6 +22,10 @@ data:
   # #### RabbitMQ connection settings ####
   RABBITMQ_HOST: "rabbitmq-service"
   RABBITMQ_PORT: "5672"
+
+  # #### SMTP settings ####
+  SMTP_HOST: "email-smtp.us-east-1.amazonaws.com"
+  SMTP_PORT: "587"
   
   # #### Internal service URLs for inter-service calls ####
   AUTH_SERVICE_URL: "http://auth-service:3004"
