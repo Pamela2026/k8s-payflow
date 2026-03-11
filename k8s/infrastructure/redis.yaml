@@ -1,0 +1,97 @@
+# ============================================
+# REDIS
+# ============================================
+# #### Deploys Redis used for caching and token/session data. ####
+# #### Ensure persistence and resource limits match workload needs. ####
+# #### Redis deployment for caching and session data ####
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: payflow
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+
+        # #### Redis runtime options ####
+
+        args:
+          - "--appendonly"
+          - "yes"
+          # #### Redis internal memory cap below pod limit to avoid OOMKills ####
+          - "--maxmemory"
+          - "192mb"
+          - "--maxmemory-policy"
+          - "noeviction"
+
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+
+        resources:
+          # #### Conservative defaults for single-node clusters ####
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+        # #### Simple ping probes for readiness/liveness ####
+        livenessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        readinessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+      volumes:
+      - name: redis-data
+        # #### Persistent storage claim for Redis data directory ####
+        persistentVolumeClaim:
+          claimName: redis-data-pvc
+
+---
+# ============================================
+# REDIS PVC
+# ============================================
+# #### PVC backing Redis /data to persist AOF and snapshots across pod restarts. ####
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: payflow
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # #### microk8s-hostpath from the storage addon ####
+  storageClassName: microk8s-hostpath
+  resources:
+    requests:
+      storage: 1Gi
