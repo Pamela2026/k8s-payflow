@@ -2,8 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 labels:
-  env: dev
-  platform: eks
+  - pairs:
+      env: dev
+      platform: eks
 
 resources:
   - ../../k8s

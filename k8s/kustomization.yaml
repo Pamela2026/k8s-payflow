@@ -8,17 +8,17 @@ resources:
   - configmaps/db-migrations.yaml
   - secrets/db-secrets.yaml
 
-  - deployments/api-gateway.yaml
-  - deployments/auth-service.yaml
-  - deployments/wallet-service.yaml
-  - deployments/transaction-service.yaml
-  - deployments/notification-service.yaml
-  - deployments/frontend.yaml
-  - deployments/redis.yaml
+  - payflow-services/api-gateway.yaml
+  - payflow-services/auth-service.yaml
+  - payflow-services/wallet-service.yaml
+  - payflow-services/transaction-service.yaml
+  - payflow-services/notification-service.yaml
+  - payflow-services/frontend.yaml
 
   - services/all-services.yaml
 
   - infrastructure/postgres.yaml
+  - infrastructure/redis.yaml
   - infrastructure/rabbitmq.yaml
   - infrastructure/metrics-server.yaml
 
@@ -28,7 +28,6 @@ resources:
 
   - jobs/db-migration-job.yaml
   - jobs/db-backup-cronjob.yaml
-  - jobs/mock-traffic-generator.yaml
   - jobs/pushgateway-metrics.yaml
   - jobs/transaction-timeout-handler.yaml
 
