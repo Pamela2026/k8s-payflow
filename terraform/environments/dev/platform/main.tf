@@ -4,6 +4,13 @@
 # #### Creates private EKS cluster and core add-ons. ####
 # #### Depends on dev foundation outputs. ####
 
+data "terraform_remote_state" "foundation" {
+  backend = "local"
+  config = {
+    path = "../foundation/terraform.tfstate"
+  }
+}
+
 # data "terraform_remote_state" "foundation" {
 #   backend = "s3"
 #   config = {
