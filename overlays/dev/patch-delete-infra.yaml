@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: payflow
+$patch: delete
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: payflow
+$patch: delete
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: payflow
+$patch: delete
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: payflow
+$patch: delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: payflow
+$patch: delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: payflow
+$patch: delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+  namespace: payflow
+$patch: delete
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: payflow-secrets
+  namespace: payflow
+$patch: delete
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: payflow-ingress
+  namespace: payflow
+$patch: delete
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: payflow-ingress-tls
+  namespace: payflow
+$patch: delete

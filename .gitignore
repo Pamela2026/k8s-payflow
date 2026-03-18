@@ -3,8 +3,10 @@
 **/datadog/**
 
 # Terraform
-.terraform/
-terraform/
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.*
 *.tfstate
 *.tfstate.*
 crash.log
@@ -13,4 +15,3 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
-.terraform.lock.hcl
