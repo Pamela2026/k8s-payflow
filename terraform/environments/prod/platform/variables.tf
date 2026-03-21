@@ -60,3 +60,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "admin_role_arn" {
+  description = "Optional role ARN to assume for admin permissions."
+  type        = string
+  default     = null
+}

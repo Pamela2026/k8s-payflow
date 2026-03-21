@@ -27,3 +27,8 @@ output "cluster_autoscaler_role_arn" {
   description = "Cluster Autoscaler IAM role ARN."
   value       = module.eks.cluster_autoscaler_role_arn
 }
+
+output "node_security_group_id" {
+  description = "EKS worker nodes security group ID."
+  value       = module.eks.node_security_group_id
+}

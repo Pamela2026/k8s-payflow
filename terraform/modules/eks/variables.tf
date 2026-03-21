@@ -39,6 +39,12 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
+variable "bastion_role_arn" {
+  description = "IAM role ARN for the bastion; granted EKS access."
+  type        = string
+  default     = null
+}
+
 variable "endpoint_private_access" {
   description = "Whether the EKS endpoint is private."
   type        = bool

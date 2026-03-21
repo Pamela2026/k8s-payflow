@@ -43,6 +43,11 @@ output "bastion_instance_id" {
   value       = module.bastion.bastion_instance_id
 }
 
+output "bastion_role_arn" {
+  description = "IAM role ARN for the bastion instance."
+  value       = module.bastion.bastion_role_arn
+}
+
 output "bastion_ssm_connect_command" {
   description = "SSM connect command for the bastion."
   value       = module.bastion.ssm_connect_command

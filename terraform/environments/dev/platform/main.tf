@@ -5,25 +5,22 @@
 # #### Depends on dev foundation outputs. ####
 
 data "terraform_remote_state" "foundation" {
-  backend = "local"
+  backend = "s3"
   config = {
-    path = "../foundation/terraform.tfstate"
+    bucket         = "payflow-tfstate-003"
+    key            = "dev/foundation/terraform.tfstate"
+    region         = var.region
+    dynamodb_table = "payflow-tfstate-lock"
+    encrypt        = true
   }
 }
 
-# data "terraform_remote_state" "foundation" {
-#   backend = "s3"
-#   config = {
-#     bucket         = "payflow-tfstate-003"
-#     key            = "dev/foundation/terraform.tfstate"
-#     region         = var.region
-#     dynamodb_table = "payflow-tfstate-lock"
-#     encrypt        = true
-#   }
-# }
-
 module "eks" {
   source = "../../../modules/eks"
+  providers = {
+    kubernetes = kubernetes
+    helm       = helm
+  }
 
   name_prefix    = local.name_prefix
   tags           = local.tags
@@ -34,6 +31,12 @@ module "eks" {
   vpc_id              = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
   private_subnet_ids  = data.terraform_remote_state.foundation.outputs.spoke_private_subnet_ids
   public_subnet_ids   = data.terraform_remote_state.foundation.outputs.spoke_public_subnet_ids
+  bastion_role_arn    = data.terraform_remote_state.foundation.outputs.bastion_role_arn
+  # Dependency mapping:
+  # - vpc_id -> foundation.spoke_vpc_id
+  # - private_subnet_ids -> foundation.spoke_private_subnet_ids
+  # - public_subnet_ids -> foundation.spoke_public_subnet_ids
+  # - bastion_role_arn -> foundation.bastion_role_arn
 
   endpoint_private_access = var.endpoint_private_access
   endpoint_public_access  = var.endpoint_public_access

@@ -10,7 +10,8 @@ node_max_size        = 4
 node_desired_size    = 2
 
 endpoint_private_access = true
-endpoint_public_access  = false
+endpoint_public_access  = true
+# admin_role_arn is environment-specific; set via TF_VAR_admin_role_arn or terraform.tfvars.local
 
 tags = {
   Owner = "payflow-wallet"

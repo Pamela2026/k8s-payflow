@@ -43,6 +43,7 @@ module "bastion" {
   name_prefix = local.name_prefix
   tags        = local.tags
   region      = var.region
+  eks_cluster_name = var.eks_cluster_name
 
   vpc_id    = module.vpc.hub_vpc_id
   subnet_id = module.vpc.hub_public_subnet_ids[0]

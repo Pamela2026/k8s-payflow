@@ -53,3 +53,9 @@ variable "ami_id" {
   type        = string
   default     = null
 }
+
+variable "eks_cluster_name" {
+  description = "Optional EKS cluster name for kubeconfig auto-setup on bastion."
+  type        = string
+  default     = null
+}

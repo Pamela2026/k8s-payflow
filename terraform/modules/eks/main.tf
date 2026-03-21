@@ -29,6 +29,10 @@ resource "aws_eks_cluster" "this" {
   version  = var.cluster_version
   role_arn = aws_iam_role.cluster.arn
 
+  access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
+  }
+
   vpc_config {
     subnet_ids              = concat(var.private_subnet_ids, var.public_subnet_ids)
     endpoint_private_access = var.endpoint_private_access
@@ -36,6 +40,62 @@ resource "aws_eks_cluster" "this" {
   }
 
   tags = var.tags
+}
+
+## Security group for EKS worker nodes. ##
+## Depends on: aws_eks_cluster.this (for cluster SG reference). ##
+resource "aws_security_group" "nodes" {
+  name        = "${var.name_prefix}-eks-nodes-sg"
+  description = "EKS worker nodes security group"
+  vpc_id      = var.vpc_id
+
+  # Allow node-to-node traffic.
+  ingress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    self      = true
+  }
+
+  # Allow all egress.
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = var.tags
+}
+
+resource "aws_security_group_rule" "nodes_from_cluster" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 0
+  protocol                 = "-1"
+  security_group_id        = aws_security_group.nodes.id
+  source_security_group_id = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+  description              = "Allow control plane traffic to nodes"
+}
+
+## EKS access entry for bastion role (cluster admin). ##
+## Depends on: aws_eks_cluster.this. ##
+resource "aws_eks_access_entry" "bastion" {
+  count        = var.bastion_role_arn == null ? 0 : 1
+  cluster_name = aws_eks_cluster.this.name
+  principal_arn = var.bastion_role_arn
+  type         = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "bastion_admin" {
+  count        = var.bastion_role_arn == null ? 0 : 1
+  cluster_name = aws_eks_cluster.this.name
+  principal_arn = var.bastion_role_arn
+  policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
 }
 
 ## EKS node IAM role. ##
@@ -77,6 +137,20 @@ resource "aws_iam_role_policy_attachment" "node_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+## Launch template for managed node group (attach node SG). ##
+resource "aws_launch_template" "nodes" {
+  name_prefix            = "${var.name_prefix}-eks-nodes-"
+  vpc_security_group_ids = [
+    aws_security_group.nodes.id,
+    aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+  ]
+
+  tag_specifications {
+    resource_type = "instance"
+    tags          = var.tags
+  }
+}
+
 ## Managed node group in private subnets. ##
 ## Depends on: aws_eks_cluster.this and aws_iam_role_policy_attachment.*. ##
 resource "aws_eks_node_group" "default" {
@@ -84,6 +158,11 @@ resource "aws_eks_node_group" "default" {
   node_group_name = "${var.name_prefix}-ng"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = var.private_subnet_ids
+
+  launch_template {
+    id      = aws_launch_template.nodes.id
+    version = "$Latest"
+  }
 
   scaling_config {
     min_size     = var.node_min_size
@@ -247,6 +326,34 @@ resource "aws_iam_role_policy_attachment" "cluster_autoscaler" {
   policy_arn = aws_iam_policy.cluster_autoscaler.arn
 }
 
+## IAM role for EBS CSI Driver (IRSA). ##
+## Depends on: aws_iam_openid_connect_provider.oidc. ##
+resource "aws_iam_role" "ebs_csi" {
+  name = "${var.name_prefix}-ebs-csi"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = { Federated = aws_iam_openid_connect_provider.oidc.arn },
+      Action = "sts:AssumeRoleWithWebIdentity",
+      Condition = {
+        StringEquals = {
+          "${replace(aws_iam_openid_connect_provider.oidc.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa",
+          "${replace(aws_iam_openid_connect_provider.oidc.url, "https://", "")}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "ebs_csi" {
+  role       = aws_iam_role.ebs_csi.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEBSCSIDriverPolicy"
+}
+
 ## EKS managed add-ons. ##
 ## Depends on: aws_eks_cluster.this. ##
 resource "aws_eks_addon" "vpc_cni" {
@@ -257,6 +364,7 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.this.name
   addon_name   = "coredns"
+  depends_on   = [aws_eks_node_group.default]
 }
 
 resource "aws_eks_addon" "kube_proxy" {
@@ -265,33 +373,35 @@ resource "aws_eks_addon" "kube_proxy" {
 }
 
 resource "aws_eks_addon" "ebs_csi" {
-  cluster_name = aws_eks_cluster.this.name
-  addon_name   = "aws-ebs-csi-driver"
+  cluster_name             = aws_eks_cluster.this.name
+  addon_name               = "aws-ebs-csi-driver"
+  service_account_role_arn = aws_iam_role.ebs_csi.arn
 }
 
-## Kubernetes providers for Helm releases. ##
-## Depends on: aws_eks_cluster.this. ##
-data "aws_eks_cluster" "this" {
-  name = aws_eks_cluster.this.name
-}
-
-data "aws_eks_cluster_auth" "this" {
-  name = aws_eks_cluster.this.name
-}
-
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.this.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.this.token
-}
-
-provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.this.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.this.token
-  }
-}
+## Kubernetes providers for Helm releases (deprecated). ##
+## NOTE: Providers must be configured in the root module and passed in.
+## Keeping this here as a reference only; do NOT uncomment.
+# data "aws_eks_cluster" "this" {
+#   name = aws_eks_cluster.this.name
+# }
+#
+# data "aws_eks_cluster_auth" "this" {
+#   name = aws_eks_cluster.this.name
+# }
+#
+# provider "kubernetes" {
+#   host                   = data.aws_eks_cluster.this.endpoint
+#   cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
+#   token                  = data.aws_eks_cluster_auth.this.token
+# }
+#
+# provider "helm" {
+#   kubernetes {
+#     host                   = data.aws_eks_cluster.this.endpoint
+#     cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
+#     token                  = data.aws_eks_cluster_auth.this.token
+#   }
+# }
 
 ## AWS Load Balancer Controller (Helm). ##
 ## Depends on: aws_iam_role_policy_attachment.alb_controller. ##

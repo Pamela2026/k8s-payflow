@@ -112,7 +112,13 @@ resource "aws_instance" "bastion" {
   user_data = <<-EOF
 #!/bin/bash
 set -euo pipefail
-dnf install -y jq tar gzip unzip
+dnf install -y jq tar gzip unzip git nano awscli
+
+# Install Terraform
+TERRAFORM_VERSION="1.6.6"
+curl -sSL "https://releases.hashicorp.com/terraform/$${TERRAFORM_VERSION}/terraform_$${TERRAFORM_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip
+unzip -o /tmp/terraform.zip -d /usr/local/bin
+rm -f /tmp/terraform.zip
 
 # Install kubectl
 KUBECTL_VERSION="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
@@ -121,6 +127,16 @@ chmod +x /usr/local/bin/kubectl
 
 # Install Helm
 curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Optional: auto-update kubeconfig on login if cluster name is provided.
+if [[ -n "${var.eks_cluster_name}" ]]; then
+  cat > /etc/profile.d/eks-kubeconfig.sh <<'PROFILE_EOF'
+if command -v aws >/dev/null 2>&1; then
+  aws eks update-kubeconfig --name "${var.eks_cluster_name}" --region "${var.region}" >/dev/null 2>&1 || true
+fi
+PROFILE_EOF
+  chmod 644 /etc/profile.d/eks-kubeconfig.sh
+fi
 EOF
 
   tags = merge(var.tags, {
