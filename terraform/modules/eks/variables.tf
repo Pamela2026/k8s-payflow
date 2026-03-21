@@ -80,3 +80,9 @@ variable "node_desired_size" {
   type        = number
   default     = 2
 }
+
+variable "enable_helm_releases" {
+  description = "Whether to install Helm add-ons (ALB, External Secrets, metrics-server, autoscaler)."
+  type        = bool
+  default     = true
+}

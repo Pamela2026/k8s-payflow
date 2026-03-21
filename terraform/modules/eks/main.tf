@@ -378,34 +378,34 @@ resource "aws_eks_addon" "ebs_csi" {
   service_account_role_arn = aws_iam_role.ebs_csi.arn
 }
 
-## Kubernetes providers for Helm releases (deprecated). ##
-## NOTE: Providers must be configured in the root module and passed in.
-## Keeping this here as a reference only; do NOT uncomment.
-# data "aws_eks_cluster" "this" {
-#   name = aws_eks_cluster.this.name
-# }
-#
-# data "aws_eks_cluster_auth" "this" {
-#   name = aws_eks_cluster.this.name
-# }
-#
-# provider "kubernetes" {
-#   host                   = data.aws_eks_cluster.this.endpoint
-#   cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
-#   token                  = data.aws_eks_cluster_auth.this.token
-# }
-#
-# provider "helm" {
-#   kubernetes {
-#     host                   = data.aws_eks_cluster.this.endpoint
-#     cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
-#     token                  = data.aws_eks_cluster_auth.this.token
-#   }
-# }
+## Kubernetes providers for Helm releases. ##
+## Depends on: aws_eks_cluster.this. ##
+data "aws_eks_cluster" "this" {
+  name = aws_eks_cluster.this.name
+}
+
+data "aws_eks_cluster_auth" "this" {
+  name = aws_eks_cluster.this.name
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.this.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.this.token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.this.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.this.token
+  }
+}
 
 ## AWS Load Balancer Controller (Helm). ##
 ## Depends on: aws_iam_role_policy_attachment.alb_controller. ##
 resource "helm_release" "alb_controller" {
+  count      = var.enable_helm_releases ? 1 : 0
   name       = "aws-load-balancer-controller"
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
@@ -445,6 +445,7 @@ resource "helm_release" "alb_controller" {
 ## External Secrets (Helm). ##
 ## Depends on: aws_iam_role_policy_attachment.external_secrets. ##
 resource "helm_release" "external_secrets" {
+  count      = var.enable_helm_releases ? 1 : 0
   name       = "external-secrets"
   namespace  = "external-secrets"
   repository = "https://charts.external-secrets.io"
@@ -471,6 +472,7 @@ resource "helm_release" "external_secrets" {
 ## Metrics Server (Helm). ##
 ## Depends on: aws_eks_cluster.this. ##
 resource "helm_release" "metrics_server" {
+  count      = var.enable_helm_releases ? 1 : 0
   name       = "metrics-server"
   namespace  = "kube-system"
   repository = "https://kubernetes-sigs.github.io/metrics-server/"
@@ -480,6 +482,7 @@ resource "helm_release" "metrics_server" {
 ## Cluster Autoscaler (Helm). ##
 ## Depends on: aws_iam_role_policy_attachment.cluster_autoscaler. ##
 resource "helm_release" "cluster_autoscaler" {
+  count      = var.enable_helm_releases ? 1 : 0
   name       = "cluster-autoscaler"
   namespace  = "kube-system"
   repository = "https://kubernetes.github.io/autoscaler"

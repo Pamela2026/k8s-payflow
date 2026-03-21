@@ -17,10 +17,6 @@ data "terraform_remote_state" "foundation" {
 
 module "eks" {
   source = "../../../modules/eks"
-  providers = {
-    kubernetes = kubernetes
-    helm       = helm
-  }
 
   name_prefix    = local.name_prefix
   tags           = local.tags
@@ -45,4 +41,5 @@ module "eks" {
   node_min_size       = var.node_min_size
   node_max_size       = var.node_max_size
   node_desired_size   = var.node_desired_size
+  enable_helm_releases = var.enable_helm_releases
 }
