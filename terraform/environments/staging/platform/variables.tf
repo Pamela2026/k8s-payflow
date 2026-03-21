@@ -67,6 +67,12 @@ variable "admin_role_arn" {
   default     = null
 }
 
+variable "terraform_user_arn" {
+  description = "IAM user ARN for Terraform runner; granted EKS access."
+  type        = string
+  default     = null
+}
+
 variable "enable_helm_releases" {
   description = "Whether to deploy Helm releases (controllers/addons)."
   type        = bool

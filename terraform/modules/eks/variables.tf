@@ -45,6 +45,12 @@ variable "bastion_role_arn" {
   default     = null
 }
 
+variable "terraform_user_arn" {
+  description = "IAM user ARN for Terraform runner; granted EKS access."
+  type        = string
+  default     = null
+}
+
 variable "endpoint_private_access" {
   description = "Whether the EKS endpoint is private."
   type        = bool
