@@ -8,7 +8,12 @@ labels:
 
 resources:
   - ../../k8s
+  - alb-ingress.yaml
+  - externalname-services.yaml
+  - external-secrets.yaml
 
 patches:
   - path: patch-configmap.yaml
   - path: patch-namespace-label.yaml
+  - path: patch-delete-infra.yaml
+  - path: patch-frontend-service.yaml
