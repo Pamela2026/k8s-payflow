@@ -54,7 +54,7 @@ resource "helm_release" "alb_controller" {
   }
 
   set {
-    name  = "serviceAccount.annotations.eks\.amazonaws\.com/role-arn"
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = var.alb_controller_role_arn
   }
 }
@@ -79,7 +79,7 @@ resource "helm_release" "external_secrets" {
   }
 
   set {
-    name  = "serviceAccount.annotations.eks\.amazonaws\.com/role-arn"
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = var.external_secrets_role_arn
   }
 }
@@ -120,7 +120,7 @@ resource "helm_release" "cluster_autoscaler" {
   }
 
   set {
-    name  = "rbac.serviceAccount.annotations.eks\.amazonaws\.com/role-arn"
+    name  = "rbac.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = var.cluster_autoscaler_role_arn
   }
 }

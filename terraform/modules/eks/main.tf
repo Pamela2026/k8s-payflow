@@ -371,7 +371,22 @@ resource "aws_iam_role" "ebs_csi" {
 
 resource "aws_iam_role_policy_attachment" "ebs_csi" {
   role       = aws_iam_role.ebs_csi.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEBSCSIDriverPolicy"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
+## Extra read permission required by EBS CSI driver health checks. ##
+resource "aws_iam_role_policy" "ebs_csi_describe_az" {
+  name = "${var.name_prefix}-ebs-csi-describe-az"
+  role = aws_iam_role.ebs_csi.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect   = "Allow",
+      Action   = ["ec2:DescribeAvailabilityZones"],
+      Resource = "*"
+    }]
+  })
 }
 
 ## EKS managed add-ons. ##
