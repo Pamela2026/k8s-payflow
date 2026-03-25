@@ -17,10 +17,12 @@ resources:
 
   - services/all-services.yaml
 
-  - infrastructure/postgres.yaml
-  - infrastructure/redis.yaml
-  - infrastructure/rabbitmq.yaml
-  - infrastructure/metrics-server.yaml
+  # Managed by Terraform + ExternalName services in overlays.
+  # - infrastructure/postgres.yaml
+  # - infrastructure/redis.yaml
+  # - infrastructure/rabbitmq.yaml
+  # Metrics Server is installed via platform-addons (Helm).
+  # - infrastructure/metrics-server.yaml
 
   - ingress/http-ingress.yaml
 
