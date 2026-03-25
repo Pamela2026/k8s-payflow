@@ -61,6 +61,7 @@ resource "helm_release" "alb_controller" {
 
 ## External Secrets (Helm). ##
 resource "helm_release" "external_secrets" {
+  depends_on = [helm_release.alb_controller]
   name       = "external-secrets"
   namespace  = "external-secrets"
   repository = "https://charts.external-secrets.io"
