@@ -2,7 +2,7 @@ region               = "us-east-1"
 environment          = "dev"
 project_name         = "payflow"
 cluster_name         = "payflow-eks-dev"
-cluster_version      = "1.32"
+cluster_version      = "1.33"
 
 node_instance_types  = ["m7i-flex.large"]
 node_min_size        = 2

@@ -2,7 +2,7 @@ region               = "us-east-1"
 environment          = "prod"
 project_name         = "payflow"
 cluster_name         = "payflow-eks-prod"
-cluster_version      = "1.32"
+cluster_version      = "1.33"
 
 node_instance_types  = ["t3.large"]
 node_min_size        = 2
