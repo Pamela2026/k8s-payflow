@@ -16,7 +16,7 @@ data "terraform_remote_state" "platform" {
 }
 
 module "eks_addons" {
-  source = "../../../modules/eks_addons"
+  source = "../../../../modules/eks_addons"
 
   cluster_name                 = data.terraform_remote_state.platform.outputs.cluster_name
   region                       = var.region

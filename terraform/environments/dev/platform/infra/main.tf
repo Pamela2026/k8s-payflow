@@ -16,7 +16,7 @@ data "terraform_remote_state" "foundation" {
 }
 
 module "eks" {
-  source = "../../../modules/eks"
+  source = "../../../../modules/eks"
 
   name_prefix    = local.name_prefix
   tags           = local.tags

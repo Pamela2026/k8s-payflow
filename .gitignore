@@ -15,3 +15,13 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+**/terraform.tfvars.local
+
+# Local artifacts
+.tmp_docx/
+kirocli.zip
+session-manager-plugin.deb
+
+# Accidental CLI arg files
+**/-target=module.eks.aws_eks_access_entry.bastion
+**/-target=module.eks.aws_eks_access_policy_association.bastion_admin
