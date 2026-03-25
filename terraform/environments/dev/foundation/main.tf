@@ -53,4 +53,6 @@ module "bastion" {
   ssh_cidr_blocks    = var.bastion_ssh_cidr_blocks
   key_name           = var.bastion_key_name
   ami_id             = var.bastion_ami_id
+  tfstate_bucket_name     = var.tfstate_bucket_name
+  tfstate_lock_table_name = var.tfstate_lock_table_name
 }

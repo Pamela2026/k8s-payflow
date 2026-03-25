@@ -141,3 +141,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "tfstate_bucket_name" {
+  description = "Terraform state bucket name for bastion platform permissions."
+  type        = string
+  default     = "payflow-tfstate-003"
+}
+
+variable "tfstate_lock_table_name" {
+  description = "Terraform state lock table name for bastion platform permissions."
+  type        = string
+  default     = "payflow-tfstate-lock"
+}

@@ -28,6 +28,11 @@ output "cluster_autoscaler_role_arn" {
   value       = module.eks.cluster_autoscaler_role_arn
 }
 
+output "vpc_id" {
+  description = "VPC ID for the EKS cluster."
+  value       = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
+}
+
 output "node_security_group_id" {
   description = "EKS worker nodes security group ID."
   value       = module.eks.node_security_group_id

@@ -1,15 +1,15 @@
 # ============================================
-# PLATFORM (PROD)
+# PLATFORM (STAGING)
 # ============================================
 # #### Creates private EKS cluster and core add-ons. ####
-# #### Depends on prod foundation outputs. ####
+# #### Depends on staging foundation outputs. ####
 
 data "terraform_remote_state" "foundation" {
   backend = "s3"
   config = {
     # Platform layer depends on foundation layer outputs (networking + bastion).
     bucket         = "payflow-tfstate-003"
-    key            = "prod/foundation/terraform.tfstate"
+    key            = "staging/foundation/terraform.tfstate"
     region         = var.region
     dynamodb_table = "payflow-tfstate-lock"
     encrypt        = true
@@ -44,5 +44,4 @@ module "eks" {
   node_min_size       = var.node_min_size
   node_max_size       = var.node_max_size
   node_desired_size   = var.node_desired_size
-  enable_helm_releases = var.enable_helm_releases
 }

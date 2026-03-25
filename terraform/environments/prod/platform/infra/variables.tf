@@ -1,5 +1,5 @@
 variable "region" {
-  description = "AWS region for the staging platform layer."
+  description = "AWS region for the prod platform layer."
   type        = string
 }
 
@@ -71,10 +71,4 @@ variable "terraform_user_arn" {
   description = "IAM user ARN for Terraform runner; granted EKS access."
   type        = string
   default     = null
-}
-
-variable "enable_helm_releases" {
-  description = "Whether to deploy Helm releases (controllers/addons)."
-  type        = bool
-  default     = true
 }

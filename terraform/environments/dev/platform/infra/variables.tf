@@ -72,9 +72,3 @@ variable "terraform_user_arn" {
   type        = string
   default     = null
 }
-
-variable "enable_helm_releases" {
-  description = "Whether to deploy Helm releases (controllers/addons)."
-  type        = bool
-  default     = true
-}

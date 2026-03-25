@@ -59,3 +59,15 @@ variable "eks_cluster_name" {
   type        = string
   default     = null
 }
+
+variable "tfstate_bucket_name" {
+  description = "Optional Terraform state bucket name for bastion policy scoping."
+  type        = string
+  default     = null
+}
+
+variable "tfstate_lock_table_name" {
+  description = "Optional Terraform state lock table name for bastion policy scoping."
+  type        = string
+  default     = null
+}

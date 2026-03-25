@@ -10,6 +10,8 @@ data "aws_ami" "al2023" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 ## IAM role assumed by the bastion instance. ##
 ## Depends on: none. ##
 resource "aws_iam_role" "bastion" {
@@ -48,6 +50,166 @@ resource "aws_iam_role_policy" "bastion_eks_describe" {
       Resource = "*"
     }]
   })
+}
+
+## IAM policy for bastion to run platform Terraform (state + EKS + IAM + EC2). ##
+## Depends on: aws_iam_role.bastion. ##
+resource "aws_iam_policy" "bastion_platform" {
+  count = var.enable_bastion && var.tfstate_bucket_name != null && var.tfstate_lock_table_name != null ? 1 : 0
+
+  name        = "${var.name_prefix}-bastion-platform"
+  description = "Scoped permissions for bastion to run platform Terraform."
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "TerraformStateS3",
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ],
+        Resource = "arn:aws:s3:::${var.tfstate_bucket_name}"
+      },
+      {
+        Sid    = "TerraformStateObjects",
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        Resource = "arn:aws:s3:::${var.tfstate_bucket_name}/*"
+      },
+      {
+        Sid    = "TerraformStateLock",
+        Effect = "Allow",
+        Action = [
+          "dynamodb:DescribeTable",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:UpdateItem"
+        ],
+        Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${var.tfstate_lock_table_name}"
+      },
+      {
+        Sid    = "EKSControlPlane",
+        Effect = "Allow",
+        Action = [
+          "eks:CreateCluster",
+          "eks:DescribeCluster",
+          "eks:UpdateClusterConfig",
+          "eks:UpdateClusterVersion",
+          "eks:DeleteCluster",
+          "eks:ListClusters",
+          "eks:CreateNodegroup",
+          "eks:DescribeNodegroup",
+          "eks:UpdateNodegroupConfig",
+          "eks:UpdateNodegroupVersion",
+          "eks:DeleteNodegroup",
+          "eks:ListNodegroups",
+          "eks:CreateAddon",
+          "eks:DescribeAddon",
+          "eks:UpdateAddon",
+          "eks:DeleteAddon",
+          "eks:DescribeAddonVersions",
+          "eks:CreateAccessEntry",
+          "eks:DeleteAccessEntry",
+          "eks:DescribeAccessEntry",
+          "eks:ListAccessEntries",
+          "eks:AssociateAccessPolicy",
+          "eks:DisassociateAccessPolicy",
+          "eks:ListAssociatedAccessPolicies"
+        ],
+        Resource = "*"
+      },
+      {
+        Sid    = "EC2ForEKS",
+        Effect = "Allow",
+        Action = [
+          "ec2:Describe*",
+          "ec2:CreateSecurityGroup",
+          "ec2:DeleteSecurityGroup",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:CreateLaunchTemplate",
+          "ec2:CreateLaunchTemplateVersion",
+          "ec2:DeleteLaunchTemplate",
+          "ec2:DeleteLaunchTemplateVersions",
+          "ec2:DescribeLaunchTemplates",
+          "ec2:DescribeLaunchTemplateVersions",
+          "ec2:CreateTags",
+          "ec2:DeleteTags"
+        ],
+        Resource = "*"
+      },
+      {
+        Sid    = "IAMScopedForEKS",
+        Effect = "Allow",
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:ListRoleTags",
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:PassRole"
+        ],
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.name_prefix}-*"
+        ]
+      },
+      {
+        Sid    = "IAMOIDCScoped",
+        Effect = "Allow",
+        Action = [
+          "iam:CreateOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "iam:GetOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviders",
+          "iam:TagOpenIDConnectProvider",
+          "iam:UntagOpenIDConnectProvider"
+        ],
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/oidc.eks.${var.region}.amazonaws.com/id/*"
+      },
+      {
+        Sid    = "IAMCreateServiceLinkedRoleForEKS",
+        Effect = "Allow",
+        Action = "iam:CreateServiceLinkedRole",
+        Resource = "*",
+        Condition = {
+          StringEquals = {
+            "iam:AWSServiceName" = "eks.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_platform" {
+  count      = var.enable_bastion && var.tfstate_bucket_name != null && var.tfstate_lock_table_name != null ? 1 : 0
+  role       = aws_iam_role.bastion[0].name
+  policy_arn = aws_iam_policy.bastion_platform[0].arn
 }
 
 ## Attach SSM core permissions for Session Manager. ##
