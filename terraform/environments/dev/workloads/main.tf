@@ -48,6 +48,7 @@ module "rds" {
   username       = var.rds_username
   password       = var.rds_password
   instance_class = var.rds_instance_class
+  backup_retention_period = var.rds_backup_retention_period
 }
 
 module "redis" {
@@ -76,6 +77,8 @@ module "rabbitmq" {
   username           = var.mq_username
   password           = var.mq_password
   host_instance_type = var.mq_host_instance_type
+  engine_version     = var.mq_engine_version
+  auto_minor_version_upgrade = true
 }
 
 module "secrets" {

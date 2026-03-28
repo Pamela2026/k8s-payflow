@@ -16,3 +16,4 @@ patches:
   - path: patch-configmap.yaml
   - path: patch-namespace-label.yaml
   - path: patch-frontend-service.yaml
+  - path: patch-backup-pvc-storageclass.yaml

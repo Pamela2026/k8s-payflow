@@ -71,3 +71,9 @@ variable "tfstate_lock_table_name" {
   type        = string
   default     = null
 }
+
+variable "enable_workloads_policy" {
+  description = "Whether to attach workloads permissions (RDS, ElastiCache, MQ, Secrets) to bastion."
+  type        = bool
+  default     = true
+}

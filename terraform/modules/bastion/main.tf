@@ -212,6 +212,100 @@ resource "aws_iam_role_policy_attachment" "bastion_platform" {
   policy_arn = aws_iam_policy.bastion_platform[0].arn
 }
 
+## IAM policy for bastion to run workloads Terraform (RDS/ElastiCache/MQ/Secrets). ##
+resource "aws_iam_policy" "bastion_workloads" {
+  count = var.enable_bastion && var.enable_workloads_policy ? 1 : 0
+
+  name        = "${var.name_prefix}-bastion-workloads"
+  description = "Scoped permissions for bastion to run workloads Terraform."
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "RDSWorkloads",
+        Effect = "Allow",
+        Action = [
+          "rds:CreateDBSubnetGroup",
+          "rds:DeleteDBSubnetGroup",
+          "rds:DescribeDBSubnetGroups",
+          "rds:CreateDBInstance",
+          "rds:DeleteDBInstance",
+          "rds:ModifyDBInstance",
+          "rds:DescribeDBInstances",
+          "rds:AddTagsToResource",
+          "rds:ListTagsForResource"
+        ],
+        Resource = "*"
+      },
+      {
+        Sid    = "ElastiCacheWorkloads",
+        Effect = "Allow",
+        Action = [
+          "elasticache:CreateCacheSubnetGroup",
+          "elasticache:DeleteCacheSubnetGroup",
+          "elasticache:DescribeCacheSubnetGroups",
+          "elasticache:CreateReplicationGroup",
+          "elasticache:DeleteReplicationGroup",
+          "elasticache:ModifyReplicationGroup",
+          "elasticache:DescribeReplicationGroups",
+          "elasticache:AddTagsToResource",
+          "elasticache:ListTagsForResource"
+        ],
+        Resource = "*"
+      },
+      {
+        Sid    = "AmazonMQWorkloads",
+        Effect = "Allow",
+        Action = [
+          "mq:CreateBroker",
+          "mq:DeleteBroker",
+          "mq:DescribeBroker",
+          "mq:ListBrokers"
+        ],
+        Resource = "*"
+      },
+      {
+        Sid    = "SecretsManagerWorkloads",
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecret",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:TagResource",
+          "secretsmanager:UntagResource"
+        ],
+        Resource = "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.name_prefix}-*"
+      },
+      {
+        Sid    = "WorkloadsSecurityGroups",
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateSecurityGroup",
+          "ec2:DeleteSecurityGroup",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:Describe*",
+          "ec2:CreateTags",
+          "ec2:DeleteTags"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_workloads" {
+  count      = var.enable_bastion && var.enable_workloads_policy ? 1 : 0
+  role       = aws_iam_role.bastion[0].name
+  policy_arn = aws_iam_policy.bastion_workloads[0].arn
+}
+
 ## Attach SSM core permissions for Session Manager. ##
 ## Depends on: aws_iam_role.bastion. ##
 resource "aws_iam_role_policy_attachment" "bastion_ssm" {

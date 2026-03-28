@@ -6,7 +6,6 @@ resources:
 
   - configmaps/app-config.yaml
   - configmaps/db-migrations.yaml
-  - secrets/db-secrets.yaml
 
   - payflow-services/api-gateway.yaml
   - payflow-services/auth-service.yaml
@@ -24,7 +23,6 @@ resources:
   # Metrics Server is installed via platform-addons (Helm).
   # - infrastructure/metrics-server.yaml
 
-  - ingress/http-ingress.yaml
 
   - autoscaling/hpa.yaml
 

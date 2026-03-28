@@ -12,7 +12,8 @@ tags = {
 rds_db_name        = "payflow"
 rds_username       = "payflow_admin"
 # rds_password must be provided via TF_VAR_rds_password or terraform.tfvars.local
-rds_instance_class = "db.r7g.xlarge"
+rds_instance_class = "db.t3.micro"
+rds_backup_retention_period = 0
 
 # Redis
 redis_node_type = "cache.r7g.xlarge"
@@ -21,6 +22,7 @@ redis_node_type = "cache.r7g.xlarge"
 mq_username          = "payflow_mq"
 # mq_password must be provided via TF_VAR_mq_password or terraform.tfvars.local
 mq_host_instance_type = "mq.m7g.large"
+mq_engine_version     = "3.13"
 
 # JWT
 # jwt_secret must be provided via TF_VAR_jwt_secret or terraform.tfvars.local

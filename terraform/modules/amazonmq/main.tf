@@ -47,6 +47,7 @@ resource "aws_mq_broker" "this" {
   engine_version      = var.engine_version
   host_instance_type  = var.host_instance_type
   deployment_mode     = var.deployment_mode
+  auto_minor_version_upgrade = var.auto_minor_version_upgrade
   publicly_accessible = false
 
   subnet_ids         = local.broker_subnet_ids

@@ -47,6 +47,12 @@ variable "rds_instance_class" {
   type        = string
 }
 
+variable "rds_backup_retention_period" {
+  description = "RDS backup retention period (days)."
+  type        = number
+  default     = 7
+}
+
 ## Redis ##
 variable "redis_node_type" {
   description = "ElastiCache node type."
@@ -68,6 +74,12 @@ variable "mq_password" {
 variable "mq_host_instance_type" {
   description = "RabbitMQ broker instance type."
   type        = string
+}
+
+variable "mq_engine_version" {
+  description = "RabbitMQ engine version."
+  type        = string
+  default     = "3.13"
 }
 
 ## Secrets ##

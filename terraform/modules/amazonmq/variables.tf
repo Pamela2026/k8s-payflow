@@ -47,6 +47,12 @@ variable "engine_version" {
   default     = "3.12.13"
 }
 
+variable "auto_minor_version_upgrade" {
+  description = "Whether minor engine upgrades are applied automatically."
+  type        = bool
+  default     = true
+}
+
 variable "host_instance_type" {
   description = "Broker instance type."
   type        = string
