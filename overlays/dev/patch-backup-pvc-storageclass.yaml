@@ -4,4 +4,4 @@ metadata:
   name: payflow-db-backups
   namespace: payflow
 spec:
-  storageClassName: gp3
+  storageClassName: gp2
