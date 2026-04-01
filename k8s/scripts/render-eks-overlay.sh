@@ -59,6 +59,17 @@ get_value() {
   echo "$json" | jq -r --arg k "$key" '.[$k].value // empty'
 }
 
+sanitize_host() {
+  local v="$1"
+  v="${v#http://}"
+  v="${v#https://}"
+  v="${v#amqp://}"
+  v="${v#amqps://}"
+  v="${v%%/*}"
+  v="${v%%:*}"
+  echo "$v"
+}
+
 services_json="$(get_outputs "$services_dir" || true)"
 dns_json="$(get_outputs "$dns_dir" || true)"
 
@@ -112,7 +123,7 @@ metadata:
   namespace: payflow
 spec:
   type: ExternalName
-  externalName: $rds_endpoint
+  externalName: $(sanitize_host "$rds_endpoint")
 ---
 apiVersion: v1
 kind: Service
@@ -121,7 +132,7 @@ metadata:
   namespace: payflow
 spec:
   type: ExternalName
-  externalName: $redis_endpoint
+  externalName: $(sanitize_host "$redis_endpoint")
 ---
 apiVersion: v1
 kind: Service
@@ -130,7 +141,7 @@ metadata:
   namespace: payflow
 spec:
   type: ExternalName
-  externalName: $rabbitmq_endpoint
+  externalName: $(sanitize_host "$rabbitmq_endpoint")
 EOF
 
 if [[ "$http_only" == "true" ]]; then
