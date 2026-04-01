@@ -74,6 +74,7 @@ cd "$BASTION_REPO"
 git fetch origin
 git checkout "$BASTION_BRANCH"
 git pull
+export TF_CLI_ARGS="-no-color"
 if [[ -n "$ADMIN_ROLE_ARN" ]]; then
   export TF_VAR_admin_role_arn="$ADMIN_ROLE_ARN"
 fi
@@ -87,11 +88,7 @@ terraform init
 EOF
 )
 
-if [[ "$AUTO_APPROVE" == "true" ]]; then
-  BASTION_CMDS+=$'\n'"terraform apply -auto-approve"
-else
-  BASTION_CMDS+=$'\n'"terraform apply"
-fi
+BASTION_CMDS+=$'\n'"terraform apply -auto-approve"
 
 if [[ "$SKIP_KUSTOMIZE" != "true" ]]; then
   BASTION_CMDS+=$'\n'"cd \"$BASTION_REPO\""
