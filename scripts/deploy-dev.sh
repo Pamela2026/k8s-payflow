@@ -47,7 +47,6 @@ tf_apply() {
 
 tf_apply "$FOUNDATION_DIR"
 tf_apply "$PLATFORM_INFRA_DIR"
-tf_apply "$WORKLOADS_DIR"
 
 BASTION_ID="$(terraform -chdir="$FOUNDATION_DIR" output -json | jq -r '.bastion_instance_id.value')"
 if [[ -z "$BASTION_ID" || "$BASTION_ID" == "null" ]]; then
@@ -111,3 +110,6 @@ echo "==> SSM command id: $CMD_ID"
 aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "$BASTION_ID" --region "$REGION"
 aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$BASTION_ID" --region "$REGION" \
   --query 'StandardOutputContent' --output text
+
+# Run workloads after addons are applied
+tf_apply "$WORKLOADS_DIR"
