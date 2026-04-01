@@ -2,7 +2,7 @@
 region           = "us-east-1"
 environment      = "dev"
 project_name     = "payflow"
-eks_cluster_name = "payflow-eks-cluster"
+eks_cluster_name = "payflow-eks-dev"
 azs              = ["us-east-1a", "us-east-1b", "us-east-1c"]
 
 hub_vpc_cidr             = "10.0.0.0/16"
