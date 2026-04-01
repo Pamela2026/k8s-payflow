@@ -99,10 +99,11 @@ if [[ "$SKIP_KUSTOMIZE" != "true" ]]; then
   BASTION_CMDS+=$'\n'"kubectl apply -k overlays/$ENV"
 fi
 
+PARAMS_JSON="$(printf '%s\n' "$BASTION_CMDS" | jq -Rs '{commands: (split("\n")[:-1])}')"
 aws ssm send-command \
   --document-name "AWS-RunShellScript" \
   --instance-ids "$BASTION_ID" \
-  --parameters "commands=$BASTION_CMDS" \
+  --parameters "$PARAMS_JSON" \
   --region "$REGION" >/tmp/ssm-cmd.json
 
 CMD_ID="$(jq -r '.Command.CommandId' /tmp/ssm-cmd.json)"
