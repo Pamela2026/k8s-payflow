@@ -15,6 +15,7 @@ rabbitmq_endpoint=""
 acm_arn=""
 app_domain=""
 api_domain=""
+http_only="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -27,6 +28,7 @@ while [[ $# -gt 0 ]]; do
     --acm-arn) acm_arn="$2"; shift 2 ;;
     --app-domain) app_domain="$2"; shift 2 ;;
     --api-domain) api_domain="$2"; shift 2 ;;
+    --http-only) http_only="true"; shift 1 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -67,30 +69,35 @@ fi
 if [[ -z "$redis_endpoint" ]]; then
   redis_endpoint="$(get_value "$services_json" "redis_endpoint")"
   [[ -z "$redis_endpoint" ]] && redis_endpoint="$(get_value "$services_json" "elasticache_endpoint")"
+  [[ -z "$redis_endpoint" ]] && redis_endpoint="$(get_value "$services_json" "redis_primary_endpoint")"
 fi
 if [[ -z "$rabbitmq_endpoint" ]]; then
   rabbitmq_endpoint="$(get_value "$services_json" "rabbitmq_endpoint")"
   [[ -z "$rabbitmq_endpoint" ]] && rabbitmq_endpoint="$(get_value "$services_json" "mq_endpoint")"
 fi
-if [[ -z "$acm_arn" ]]; then
-  acm_arn="$(get_value "$dns_json" "acm_certificate_arn")"
-  [[ -z "$acm_arn" ]] && acm_arn="$(get_value "$dns_json" "alb_acm_certificate_arn")"
-fi
-if [[ -z "$app_domain" ]]; then
-  app_domain="$(get_value "$dns_json" "app_domain")"
-  [[ -z "$app_domain" ]] && app_domain="$(get_value "$dns_json" "root_domain")"
-fi
-if [[ -z "$api_domain" ]]; then
-  api_domain="$(get_value "$dns_json" "api_domain")"
+if [[ "$http_only" != "true" ]]; then
+  if [[ -z "$acm_arn" ]]; then
+    acm_arn="$(get_value "$dns_json" "acm_certificate_arn")"
+    [[ -z "$acm_arn" ]] && acm_arn="$(get_value "$dns_json" "alb_acm_certificate_arn")"
+  fi
+  if [[ -z "$app_domain" ]]; then
+    app_domain="$(get_value "$dns_json" "app_domain")"
+    [[ -z "$app_domain" ]] && app_domain="$(get_value "$dns_json" "root_domain")"
+  fi
+  if [[ -z "$api_domain" ]]; then
+    api_domain="$(get_value "$dns_json" "api_domain")"
+  fi
 fi
 
 missing=()
 [[ -z "$rds_endpoint" ]] && missing+=("rds_endpoint/db_endpoint")
 [[ -z "$redis_endpoint" ]] && missing+=("redis_endpoint/elasticache_endpoint")
 [[ -z "$rabbitmq_endpoint" ]] && missing+=("rabbitmq_endpoint/mq_endpoint")
-[[ -z "$acm_arn" ]] && missing+=("acm_certificate_arn")
-[[ -z "$app_domain" ]] && missing+=("app_domain")
-[[ -z "$api_domain" ]] && missing+=("api_domain")
+if [[ "$http_only" != "true" ]]; then
+  [[ -z "$acm_arn" ]] && missing+=("acm_certificate_arn")
+  [[ -z "$app_domain" ]] && missing+=("app_domain")
+  [[ -z "$api_domain" ]] && missing+=("api_domain")
+fi
 
 if [[ "${#missing[@]}" -gt 0 ]]; then
   echo "Missing required values: ${missing[*]}" >&2
@@ -126,6 +133,39 @@ spec:
   externalName: $rabbitmq_endpoint
 EOF
 
+if [[ "$http_only" == "true" ]]; then
+cat > "$overlay_dir/alb-ingress.yaml" <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: payflow-alb
+  namespace: payflow
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+spec:
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 80
+EOF
+else
 cat > "$overlay_dir/alb-ingress.yaml" <<EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -170,6 +210,7 @@ spec:
             port:
               number: 80
 EOF
+fi
 
 echo "Wrote $overlay_dir/externalname-services.yaml"
 echo "Wrote $overlay_dir/alb-ingress.yaml"
