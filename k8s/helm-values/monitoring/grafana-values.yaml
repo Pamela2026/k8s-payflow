@@ -16,8 +16,8 @@ replicas: 1
 persistence:
   enabled: true
   size: 2Gi
-  # #### Explicit storage class for single-node hostPath clusters ####
-  storageClassName: microk8s-hostpath
+  # #### Storage class for EKS. ####
+  storageClassName: gp2
 
 # ============================================
 # GRAFANA RESOURCES

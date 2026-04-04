@@ -125,3 +125,73 @@ resource "helm_release" "cluster_autoscaler" {
     value = var.cluster_autoscaler_role_arn
   }
 }
+
+## Prometheus (Helm). ##
+resource "helm_release" "prometheus" {
+  count      = var.enable_prometheus ? 1 : 0
+  name       = "payflow-prometheus"
+  namespace  = "monitoring"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "prometheus"
+  create_namespace = true
+  values = var.prometheus_values_path != "" ? [file(var.prometheus_values_path)] : []
+}
+
+## Grafana (Helm). ##
+resource "helm_release" "grafana" {
+  count      = var.enable_grafana ? 1 : 0
+  name       = "payflow-grafana"
+  namespace  = "monitoring"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "grafana"
+  create_namespace = true
+  values = var.grafana_values_path != "" ? [file(var.grafana_values_path)] : []
+}
+
+## Loki (Helm). ##
+resource "helm_release" "loki" {
+  count      = var.enable_loki ? 1 : 0
+  name       = "payflow-loki"
+  namespace  = "monitoring"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "loki"
+  create_namespace = true
+  values = var.loki_values_path != "" ? [file(var.loki_values_path)] : []
+}
+
+## Promtail (Helm). ##
+resource "helm_release" "promtail" {
+  count      = var.enable_promtail ? 1 : 0
+  name       = "payflow-promtail"
+  namespace  = "monitoring"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "promtail"
+  create_namespace = true
+  values = var.promtail_values_path != "" ? [file(var.promtail_values_path)] : []
+}
+
+## Postgres Exporter (Helm). ##
+resource "helm_release" "postgres_exporter" {
+  count      = var.enable_postgres_exporter ? 1 : 0
+  name       = "payflow-postgres-exporter"
+  namespace  = "monitoring"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "prometheus-postgres-exporter"
+  create_namespace = true
+  values = var.postgres_exporter_values_path != "" ? [file(var.postgres_exporter_values_path)] : []
+}
+
+## Kubecost (Helm). ##
+resource "helm_release" "kubecost" {
+  count      = var.enable_kubecost ? 1 : 0
+  name       = "kubecost"
+  namespace  = "kubecost"
+  repository = "https://kubecost.github.io/cost-analyzer/"
+  chart      = "cost-analyzer"
+  create_namespace = true
+
+  set {
+    name  = "kubecostProductConfigs.clusterName"
+    value = var.cluster_name
+  }
+}
