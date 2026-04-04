@@ -93,3 +93,9 @@ variable "postgres_exporter_values_path" {
   type        = string
   default     = ""
 }
+
+variable "kubecost_values_path" {
+  description = "Path to Kubecost Helm values file."
+  type        = string
+  default     = ""
+}

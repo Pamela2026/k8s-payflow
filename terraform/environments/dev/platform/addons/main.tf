@@ -30,4 +30,5 @@ module "eks_addons" {
   loki_values_path             = "${path.root}/../../../../k8s/helm-values/monitoring/loki-values.yaml"
   promtail_values_path         = "${path.root}/../../../../k8s/helm-values/monitoring/promtail-values.yaml"
   postgres_exporter_values_path = "${path.root}/../../../../k8s/helm-values/monitoring/postgres-exporter-values.yaml"
+  kubecost_values_path         = "${path.root}/../../../../k8s/helm-values/monitoring/kubecost-values.yaml"
 }

@@ -189,6 +189,7 @@ resource "helm_release" "kubecost" {
   repository = "https://kubecost.github.io/cost-analyzer/"
   chart      = "cost-analyzer"
   create_namespace = true
+  values = var.kubecost_values_path != "" ? [file(var.kubecost_values_path)] : []
 
   set {
     name  = "kubecostProductConfigs.clusterName"
