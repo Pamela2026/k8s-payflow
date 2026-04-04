@@ -22,11 +22,19 @@ interface_endpoint_services = ["ecr.api", "ecr.dkr", "sts", "secretsmanager", "l
 
 enable_bastion             = true
 bastion_instance_type       = "t3.micro"
-bastion_ssh_cidr_blocks     = []
-bastion_key_name            = null
+bastion_ssh_cidr_blocks     = "102.91.93.17/32"
+bastion_key_name            = "payflow-bastion-key"
 bastion_ami_id              = null
 
 
 tags = {
   Owner = "payflow-wallet"
 }
+
+# ---- Cost Ops (AWS Budgets + Anomaly Detection) ----
+# enable_cost_ops = true
+# cost_ops_budget_amount = 500
+# cost_ops_budget_unit = "USD"
+# cost_ops_anomaly_threshold = 100
+# cost_ops_anomaly_frequency = "DAILY"
+# cost_ops_email_addresses = ["finops@your-domain.com"]

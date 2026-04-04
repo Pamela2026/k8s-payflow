@@ -56,3 +56,18 @@ module "bastion" {
   tfstate_bucket_name     = var.tfstate_bucket_name
   tfstate_lock_table_name = var.tfstate_lock_table_name
 }
+
+module "cost_ops" {
+  source = "../../../modules/cost_ops"
+
+  name_prefix = local.name_prefix
+  tags        = local.tags
+
+  enable_cost_ops         = var.enable_cost_ops
+  budget_amount           = var.cost_ops_budget_amount
+  budget_unit             = var.cost_ops_budget_unit
+  budget_email_addresses  = var.cost_ops_email_addresses
+  anomaly_threshold       = var.cost_ops_anomaly_threshold
+  anomaly_frequency       = var.cost_ops_anomaly_frequency
+  anomaly_email_addresses = var.cost_ops_email_addresses
+}
