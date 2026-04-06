@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-frontend:v3
+        image: pamela001/payflow-wallet-frontend:v3
         imagePullPolicy: Always
         ports:
         - containerPort: 80

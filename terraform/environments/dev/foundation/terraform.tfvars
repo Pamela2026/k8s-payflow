@@ -22,7 +22,7 @@ interface_endpoint_services = ["ecr.api", "ecr.dkr", "sts", "secretsmanager", "l
 
 enable_bastion             = true
 bastion_instance_type       = "t3.micro"
-bastion_ssh_cidr_blocks     = "102.91.93.17/32"
+bastion_ssh_cidr_blocks     = ["102.91.93.17/32"]
 bastion_key_name            = "payflow-bastion-key"
 bastion_ami_id              = null
 

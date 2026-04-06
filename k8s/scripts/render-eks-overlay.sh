@@ -16,6 +16,7 @@ acm_arn=""
 app_domain=""
 api_domain=""
 http_only="false"
+waf_acl_arn=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -29,6 +30,7 @@ while [[ $# -gt 0 ]]; do
     --app-domain) app_domain="$2"; shift 2 ;;
     --api-domain) api_domain="$2"; shift 2 ;;
     --http-only) http_only="true"; shift 1 ;;
+    --waf-acl-arn) waf_acl_arn="$2"; shift 2 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -95,9 +97,14 @@ if [[ "$http_only" != "true" ]]; then
     app_domain="$(get_value "$dns_json" "app_domain")"
     [[ -z "$app_domain" ]] && app_domain="$(get_value "$dns_json" "root_domain")"
   fi
-  if [[ -z "$api_domain" ]]; then
-    api_domain="$(get_value "$dns_json" "api_domain")"
+if [[ -z "$api_domain" ]]; then
+  api_domain="$(get_value "$dns_json" "api_domain")"
   fi
+fi
+
+if [[ -z "$waf_acl_arn" ]]; then
+  waf_acl_arn="$(get_value "$dns_json" "waf_web_acl_arn")"
+  [[ -z "$waf_acl_arn" ]] && waf_acl_arn="$(get_value "$dns_json" "waf_acl_arn")"
 fi
 
 missing=()
@@ -145,6 +152,10 @@ spec:
 EOF
 
 if [[ "$http_only" == "true" ]]; then
+waf_annotation=""
+if [[ -n "$waf_acl_arn" ]]; then
+  waf_annotation="    alb.ingress.kubernetes.io/wafv2-acl-arn: $waf_acl_arn"
+fi
 cat > "$overlay_dir/alb-ingress.yaml" <<EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -152,10 +163,10 @@ metadata:
   name: payflow-alb
   namespace: payflow
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+${waf_annotation}
 spec:
   ingressClassName: alb
   rules:
@@ -177,6 +188,10 @@ spec:
               number: 80
 EOF
 else
+waf_annotation=""
+if [[ -n "$waf_acl_arn" ]]; then
+  waf_annotation="    alb.ingress.kubernetes.io/wafv2-acl-arn: $waf_acl_arn"
+fi
 cat > "$overlay_dir/alb-ingress.yaml" <<EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -184,12 +199,12 @@ metadata:
   name: payflow-alb
   namespace: payflow
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/certificate-arn: $acm_arn
+${waf_annotation}
 spec:
   ingressClassName: alb
   rules:

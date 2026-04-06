@@ -62,8 +62,10 @@ ADDON_DIR="$BASTION_REPO/terraform/environments/$ENV/platform/addons"
 
 BASTION_CMDS=$(cat <<EOF
 set -euo pipefail
+export HOME=/home/ssm-user
 if [ ! -d "$BASTION_REPO/.git" ]; then git clone "$REPO_URL" "$BASTION_REPO"; fi
 cd "$BASTION_REPO"
+git config --global --add safe.directory "$BASTION_REPO"
 git fetch origin
 git checkout "$BASTION_BRANCH"
 git pull
@@ -77,11 +79,7 @@ fi
 
 BASTION_CMDS+=$'\n'"cd \"$ADDON_DIR\""
 BASTION_CMDS+=$'\n'"terraform init"
-if [[ "$AUTO_APPROVE" == "true" ]]; then
-  BASTION_CMDS+=$'\n'"terraform destroy -auto-approve"
-else
-  BASTION_CMDS+=$'\n'"terraform destroy"
-fi
+BASTION_CMDS+=$'\n'"terraform destroy -auto-approve"
 
 PARAMS_JSON="$(printf '%s\n' "$BASTION_CMDS" | jq -Rs '{commands: (split("\n")[:-1])}')"
 aws ssm send-command \

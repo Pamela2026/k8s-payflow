@@ -15,7 +15,7 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
     nginx.ingress.kubernetes.io/enable-cors: "true"
 spec:
-  ingressClassName: public
+  ingressClassName: nginx
   # #### Host-based routing for frontend and API, with a hostless fallback for IP access ####
   rules:
   - http:

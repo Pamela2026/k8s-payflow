@@ -12,6 +12,26 @@ resources:
   - externalname-services.yaml
   - external-secrets.yaml
 
+images:
+  - name: pamela001/payflow-wallet-api-gateway
+    newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-api-gateway
+    newTag: v2
+  - name: pamela001/payflow-wallet-auth-service
+    newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-auth-service
+    newTag: v2
+  - name: pamela001/payflow-wallet-frontend
+    newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-frontend
+    newTag: v3
+  - name: pamela001/payflow-wallet-notification-service
+    newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-notification-service
+    newTag: v2
+  - name: pamela001/payflow-wallet-transaction-service
+    newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-transaction-service
+    newTag: v2
+  - name: pamela001/payflow-wallet-wallet-service
+    newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-wallet-service
+    newTag: v2
+
 patches:
   - path: patch-configmap.yaml
   - path: patch-namespace-label.yaml

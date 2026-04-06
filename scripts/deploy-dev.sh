@@ -12,6 +12,7 @@ SKIP_KUSTOMIZE="${SKIP_KUSTOMIZE:-false}"
 
 # Bastion-only inputs (do not require locally)
 ADMIN_ROLE_ARN="${TF_VAR_admin_role_arn:-}"
+BASTION_ADMIN_ROLE_ARN="${BASTION_ADMIN_ROLE_ARN:-}"
 RDS_PASSWORD="${TF_VAR_rds_password:-}"
 JWT_SECRET="${TF_VAR_jwt_secret:-}"
 MQ_PASSWORD="${TF_VAR_mq_password:-}"
@@ -58,7 +59,7 @@ if [[ -z "$RDS_PASSWORD" || -z "$JWT_SECRET" || -z "$MQ_PASSWORD" ]]; then
   echo "Missing required env vars. Set TF_VAR_rds_password, TF_VAR_jwt_secret, TF_VAR_mq_password" >&2
   exit 1
 fi
-if [[ -z "$ADMIN_ROLE_ARN" ]]; then
+if [[ -z "$ADMIN_ROLE_ARN" && -z "$BASTION_ADMIN_ROLE_ARN" ]]; then
   echo "TF_VAR_admin_role_arn not set. Continuing local applies; bastion addons will run without this export." >&2
 fi
 
@@ -75,7 +76,9 @@ git fetch origin
 git checkout "$BASTION_BRANCH"
 git pull
 export TF_CLI_ARGS="-no-color"
-if [[ -n "$ADMIN_ROLE_ARN" ]]; then
+if [[ -n "$BASTION_ADMIN_ROLE_ARN" ]]; then
+  export TF_VAR_admin_role_arn="$BASTION_ADMIN_ROLE_ARN"
+elif [[ -n "$ADMIN_ROLE_ARN" ]]; then
   export TF_VAR_admin_role_arn="$ADMIN_ROLE_ARN"
 fi
 export TF_VAR_rds_password="$RDS_PASSWORD"

@@ -78,3 +78,15 @@ variable "ecr_repositories" {
   type        = list(string)
   default     = []
 }
+
+variable "enable_waf" {
+  description = "Whether to create a WAFv2 Web ACL for the ALB."
+  type        = bool
+  default     = false
+}
+
+variable "waf_rate_limit" {
+  description = "Rate limit (requests per 5 minutes per IP)."
+  type        = number
+  default     = 2000
+}
