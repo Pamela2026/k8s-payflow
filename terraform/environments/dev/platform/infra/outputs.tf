@@ -37,3 +37,8 @@ output "node_security_group_id" {
   description = "EKS worker nodes security group ID."
   value       = module.eks.node_security_group_id
 }
+
+output "ecr_repository_urls" {
+  description = "Map of ECR repository name to URL."
+  value       = module.ecr.repository_urls
+}

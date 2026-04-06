@@ -44,3 +44,10 @@ module "eks" {
   node_max_size       = var.node_max_size
   node_desired_size   = var.node_desired_size
 }
+
+module "ecr" {
+  source = "../../../../modules/ecr"
+
+  repositories = var.ecr_repositories
+  tags         = local.tags
+}

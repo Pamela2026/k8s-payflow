@@ -72,3 +72,9 @@ variable "terraform_user_arn" {
   type        = string
   default     = null
 }
+
+variable "ecr_repositories" {
+  description = "ECR repositories to create for Payflow services."
+  type        = list(string)
+  default     = []
+}

@@ -27,7 +27,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: auth-service
-        image: pamela001/payflow-wallet-auth-service:v2
+        image: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-auth-service:v2
         imagePullPolicy: Always
         ports:
         - containerPort: 3004
