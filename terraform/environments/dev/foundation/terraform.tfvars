@@ -31,10 +31,10 @@ tags = {
   Owner = "payflow-wallet"
 }
 
-# ---- Cost Ops (AWS Budgets + Anomaly Detection) ----
-# enable_cost_ops = true
-# cost_ops_budget_amount = 500
-# cost_ops_budget_unit = "USD"
-# cost_ops_anomaly_threshold = 100
-# cost_ops_anomaly_frequency = "DAILY"
-# cost_ops_email_addresses = ["finops@your-domain.com"]
+#---- Cost Ops (AWS Budgets + Anomaly Detection) ----
+enable_cost_ops = true
+cost_ops_budget_amount = 500
+cost_ops_budget_unit = "USD"
+cost_ops_anomaly_threshold = 100
+cost_ops_anomaly_frequency = "DAILY"
+cost_ops_email_addresses = ["pamelapateick464@gmail.com"]

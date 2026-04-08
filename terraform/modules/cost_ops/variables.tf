@@ -35,10 +35,7 @@ variable "budget_email_addresses" {
   description = "Email addresses for budget alerts."
   type        = list(string)
   default     = []
-  validation {
-    condition     = !var.enable_cost_ops || length(var.budget_email_addresses) > 0
-    error_message = "Set at least one budget email address when enable_cost_ops is true."
-  }
+
 }
 
 variable "anomaly_threshold" {
@@ -57,8 +54,5 @@ variable "anomaly_email_addresses" {
   description = "Email addresses for anomaly detection alerts."
   type        = list(string)
   default     = []
-  validation {
-    condition     = !var.enable_cost_ops || length(var.anomaly_email_addresses) > 0
-    error_message = "Set at least one anomaly email address when enable_cost_ops is true."
-  }
+
 }
