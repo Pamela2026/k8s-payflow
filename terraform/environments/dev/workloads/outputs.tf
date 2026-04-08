@@ -27,3 +27,8 @@ output "jwt_secret_arn" {
   description = "JWT Secrets Manager ARN."
   value       = module.secrets.jwt_secret_arn
 }
+
+output "slack_webhook_secret_arn" {
+  description = "Alertmanager Slack webhook secret ARN (optional)."
+  value       = module.secrets.slack_webhook_secret_arn
+}
