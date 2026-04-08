@@ -16,7 +16,7 @@ spec:
           image: curlimages/curl:8.6.0
           env:
             - name: PUSHGATEWAY_URL
-              value: http://payflow-prometheus-pushgateway.monitoring.svc.cluster.local:9091
+              value: http://payflow-prometheus-prometheus-pushgateway.monitoring.svc.cluster.local:9091
             - name: JOB_NAME
               value: transaction-timeout-handler
           command:
