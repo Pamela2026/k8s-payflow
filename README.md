@@ -2,6 +2,10 @@
 
 End-to-end deployment guide for running PayFlow on MicroK8s.
 
+Deployment scripts:
+- `deploy.sh` runs the full MicroK8s-friendly deployment (in-cluster infra + monitoring).
+- `scripts/deploy-eks-apps.sh` deploys only app workloads on EKS when infra/monitoring are managed outside Kubernetes.
+
 ## Prerequisites
 
 - MicroK8s installed and running.
