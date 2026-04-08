@@ -78,6 +78,17 @@ resource "aws_security_group_rule" "nodes_from_cluster" {
   description              = "Allow control plane traffic to nodes"
 }
 
+resource "aws_security_group_rule" "cluster_api_from_bastion_vpc" {
+  count             = var.bastion_vpc_cidr != null ? 1 : 0
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+  cidr_blocks       = [var.bastion_vpc_cidr]
+  description       = "Allow bastion VPC to reach EKS API via TGW"
+}
+
 ## EKS access entry for bastion role (cluster admin). ##
 ## Depends on: aws_eks_cluster.this. ##
 resource "aws_eks_access_entry" "bastion" {

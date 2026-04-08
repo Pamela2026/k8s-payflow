@@ -12,6 +12,8 @@ node_desired_size    = 2
 endpoint_private_access = true
 endpoint_public_access  = false
 # admin_role_arn is environment-specific; set via TF_VAR_admin_role_arn or terraform.tfvars.local
+terraform_user_arn = "arn:aws:iam::725094769583:role/for-payflow-terraform"
+bastion_vpc_cidr   = "10.0.0.0/16"
 
 ecr_repositories = [
   "payflow-wallet-api-gateway",

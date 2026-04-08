@@ -29,6 +29,7 @@ module "eks" {
   public_subnet_ids   = data.terraform_remote_state.foundation.outputs.spoke_public_subnet_ids
   bastion_role_arn    = data.terraform_remote_state.foundation.outputs.bastion_role_arn
   terraform_user_arn  = var.terraform_user_arn
+  bastion_vpc_cidr    = var.bastion_vpc_cidr
   # Dependency mapping:
   # - vpc_id -> foundation.spoke_vpc_id
   # - private_subnet_ids -> foundation.spoke_private_subnet_ids

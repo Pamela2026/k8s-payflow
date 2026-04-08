@@ -45,6 +45,12 @@ variable "bastion_role_arn" {
   default     = null
 }
 
+variable "bastion_vpc_cidr" {
+  description = "CIDR of the bastion VPC; allowed to reach the EKS API on port 443 via TGW."
+  type        = string
+  default     = null
+}
+
 variable "terraform_user_arn" {
   description = "IAM user ARN for Terraform runner; granted EKS access."
   type        = string

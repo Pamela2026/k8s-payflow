@@ -73,6 +73,12 @@ variable "terraform_user_arn" {
   default     = null
 }
 
+variable "bastion_vpc_cidr" {
+  description = "CIDR of the bastion VPC allowed to reach EKS API on port 443."
+  type        = string
+  default     = null
+}
+
 variable "ecr_repositories" {
   description = "ECR repositories to create for Payflow services."
   type        = list(string)
