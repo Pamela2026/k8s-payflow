@@ -77,7 +77,9 @@ server:
   retention: "2d"
   # #### Persists TSDB data so pod restarts do not wipe metrics history. ####
   persistentVolume:
-    enabled: false
+    enabled: true
+    size: 5Gi
+    storageClass: gp2
   # #### CPU/memory envelope for Prometheus query + scrape workload. ####
   resources:
     requests:
