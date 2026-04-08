@@ -61,6 +61,8 @@ spec:
             secretKeyRef:
               name: payflow-secrets
               key: DB_PASSWORD
+        - name: PGSSLMODE
+          value: "require"
 
         # #### Redis connection URL (client-side) ####
         - name: REDIS_URL

@@ -60,7 +60,7 @@ spec:
         - |
           # #### Build Flyway JDBC URL and apply migrations ####
           set -e
-          export FLYWAY_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+          export FLYWAY_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
           export FLYWAY_USER="$DB_USER"
           export FLYWAY_PASSWORD="$DB_PASSWORD"
           flyway -baselineOnMigrate=true -connectRetries=60 migrate

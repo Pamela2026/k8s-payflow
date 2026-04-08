@@ -3,13 +3,10 @@ set -euo pipefail
 
 ENV="${ENV:-dev}"
 REGION="${REGION:-us-east-1}"
-CLUSTER_NAME="${CLUSTER_NAME:-payflow-eks-dev}"
-REPO_URL="${REPO_URL:-https://github.com/Pamela2026/k8s-payflow.git}"
-BASTION_REPO="${BASTION_REPO:-/home/ssm-user/k8s-payflow}"
-BASTION_BRANCH="${BASTION_BRANCH:-test}"
 AUTO_APPROVE="${AUTO_APPROVE:-false}"
-SKIP_KUSTOMIZE="${SKIP_KUSTOMIZE:-false}"
 SKIP_FOUNDATION="${SKIP_FOUNDATION:-false}"
+K8S_TEARDOWN="${K8S_TEARDOWN:-false}"
+K8S_ENV_DIR="${K8S_ENV_DIR:-overlays/${ENV}}"
 
 if ! command -v terraform >/dev/null 2>&1; then
   echo "terraform not found in PATH" >&2
@@ -27,6 +24,7 @@ fi
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FOUNDATION_DIR="$ROOT_DIR/terraform/environments/$ENV/foundation"
 PLATFORM_INFRA_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/infra"
+PLATFORM_ADDONS_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/addons"
 WORKLOADS_DIR="$ROOT_DIR/terraform/environments/$ENV/workloads"
 
 confirm_destroy() {
@@ -52,49 +50,21 @@ tf_destroy() {
 
 confirm_destroy || { echo "Aborted."; exit 1; }
 
-BASTION_ID="$(terraform -chdir="$FOUNDATION_DIR" output -json | jq -r '.bastion_instance_id.value')"
-if [[ -z "$BASTION_ID" || "$BASTION_ID" == "null" ]]; then
-  echo "bastion_instance_id not found in foundation outputs" >&2
-  exit 1
+# Optional Kubernetes teardown (k8s resources only).
+if [[ "$K8S_TEARDOWN" == "true" ]]; then
+  if ! command -v kubectl >/dev/null 2>&1; then
+    echo "kubectl not found in PATH (required for K8S_TEARDOWN)" >&2
+    exit 1
+  fi
+  if [[ -d "$ROOT_DIR/$K8S_ENV_DIR" ]]; then
+    kubectl delete -k "$ROOT_DIR/$K8S_ENV_DIR" || true
+  else
+    echo "K8S_ENV_DIR not found: $ROOT_DIR/$K8S_ENV_DIR (skipping k8s teardown)"
+  fi
 fi
-
-ADDON_DIR="$BASTION_REPO/terraform/environments/$ENV/platform/addons"
-
-BASTION_CMDS=$(cat <<EOF
-set -euo pipefail
-export HOME=/home/ssm-user
-if [ ! -d "$BASTION_REPO/.git" ]; then git clone "$REPO_URL" "$BASTION_REPO"; fi
-cd "$BASTION_REPO"
-git config --global --add safe.directory "$BASTION_REPO"
-git fetch origin
-git checkout "$BASTION_BRANCH"
-git pull
-aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$REGION"
-EOF
-)
-
-if [[ "$SKIP_KUSTOMIZE" != "true" ]]; then
-  BASTION_CMDS+=$'\n'"kubectl delete -k overlays/$ENV || true"
-fi
-
-BASTION_CMDS+=$'\n'"cd \"$ADDON_DIR\""
-BASTION_CMDS+=$'\n'"terraform init"
-BASTION_CMDS+=$'\n'"terraform destroy -auto-approve"
-
-PARAMS_JSON="$(printf '%s\n' "$BASTION_CMDS" | jq -Rs '{commands: (split("\n")[:-1])}')"
-aws ssm send-command \
-  --document-name "AWS-RunShellScript" \
-  --instance-ids "$BASTION_ID" \
-  --parameters "$PARAMS_JSON" \
-  --region "$REGION" >/tmp/ssm-cmd.json
-
-CMD_ID="$(jq -r '.Command.CommandId' /tmp/ssm-cmd.json)"
-echo "==> SSM command id: $CMD_ID"
-aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "$BASTION_ID" --region "$REGION"
-aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$BASTION_ID" --region "$REGION" \
-  --query 'StandardOutputContent' --output text
 
 # Local destroys (reverse order)
+tf_destroy "$PLATFORM_ADDONS_DIR"
 tf_destroy "$WORKLOADS_DIR"
 tf_destroy "$PLATFORM_INFRA_DIR"
 if [[ "$SKIP_FOUNDATION" != "true" ]]; then

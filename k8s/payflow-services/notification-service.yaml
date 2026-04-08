@@ -61,6 +61,8 @@ spec:
             secretKeyRef:
               name: payflow-secrets
               key: DB_PASSWORD
+        - name: PGSSLMODE
+          value: "require"
 
         # #### RabbitMQ connection URL (client-side) ####
         - name: RABBITMQ_USER
