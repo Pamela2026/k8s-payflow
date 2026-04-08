@@ -10,6 +10,10 @@
 # #### Enabled to receive alerts from Prometheus rules. ####
 alertmanager:
   enabled: true
+  persistentVolume:
+    enabled: true
+    storageClass: gp2
+    size: 2Gi
   alertmanagerFiles:
     alertmanager.yml: |
       global:
