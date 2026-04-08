@@ -10,7 +10,7 @@ metadata:
   name: frontend
   namespace: payflow
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
