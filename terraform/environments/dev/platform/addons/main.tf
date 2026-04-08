@@ -25,10 +25,10 @@ module "eks_addons" {
   external_secrets_role_arn    = data.terraform_remote_state.platform.outputs.external_secrets_role_arn
   cluster_autoscaler_role_arn  = data.terraform_remote_state.platform.outputs.cluster_autoscaler_role_arn
 
-  prometheus_values_path       = "${path.root}/../../../../k8s/helm-values/monitoring/prometheus-values.yaml"
-  grafana_values_path          = "${path.root}/../../../../k8s/helm-values/monitoring/grafana-values.yaml"
-  loki_values_path             = "${path.root}/../../../../k8s/helm-values/monitoring/loki-values.yaml"
-  promtail_values_path         = "${path.root}/../../../../k8s/helm-values/monitoring/promtail-values.yaml"
-  postgres_exporter_values_path = "${path.root}/../../../../k8s/helm-values/monitoring/postgres-exporter-values.yaml"
-  kubecost_values_path         = "${path.root}/../../../../k8s/helm-values/monitoring/kubecost-values.yaml"
+  prometheus_values_path       = abspath("${path.root}/../../../../k8s/helm-values/monitoring/prometheus-values.yaml")
+  grafana_values_path          = abspath("${path.root}/../../../../k8s/helm-values/monitoring/grafana-values.yaml")
+  loki_values_path             = abspath("${path.root}/../../../../k8s/helm-values/monitoring/loki-values.yaml")
+  promtail_values_path         = abspath("${path.root}/../../../../k8s/helm-values/monitoring/promtail-values.yaml")
+  postgres_exporter_values_path = abspath("${path.root}/../../../../k8s/helm-values/monitoring/postgres-exporter-values.yaml")
+  kubecost_values_path         = abspath("${path.root}/../../../../k8s/helm-values/monitoring/kubecost-values.yaml")
 }
