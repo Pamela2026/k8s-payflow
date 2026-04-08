@@ -17,5 +17,5 @@ spec:
     limits.cpu: "8"
     limits.memory: 12Gi
     # #### Object count ceilings ####
-    pods: "15"
+    pods: "30"
     secrets: "10"
