@@ -194,6 +194,7 @@ resource "helm_release" "kubecost" {
   namespace  = "kubecost"
   repository = "https://kubecost.github.io/cost-analyzer/"
   chart      = "cost-analyzer"
+  version    = "2.8.3"
   create_namespace = true
   values = var.kubecost_values_path != "" ? [file(var.kubecost_values_path)] : []
 
