@@ -42,3 +42,20 @@ resource "aws_secretsmanager_secret_version" "jwt" {
     jwt_secret = var.jwt_secret
   })
 }
+
+## Secrets Manager: Alertmanager Slack webhook (optional). ##
+resource "aws_secretsmanager_secret" "alertmanager_slack" {
+  count = var.slack_webhook_url != null && var.slack_webhook_url != "" ? 1 : 0
+
+  name = "${var.name_prefix}-slack-webhook"
+  tags = var.tags
+}
+
+resource "aws_secretsmanager_secret_version" "alertmanager_slack" {
+  count = var.slack_webhook_url != null && var.slack_webhook_url != "" ? 1 : 0
+
+  secret_id     = aws_secretsmanager_secret.alertmanager_slack[0].id
+  secret_string = jsonencode({
+    webhook-url = var.slack_webhook_url
+  })
+}

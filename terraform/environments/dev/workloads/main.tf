@@ -102,4 +102,5 @@ module "secrets" {
   }
 
   jwt_secret = var.jwt_secret
+  slack_webhook_url = var.slack_webhook_url
 }

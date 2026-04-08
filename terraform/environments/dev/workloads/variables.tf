@@ -88,3 +88,10 @@ variable "jwt_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "slack_webhook_url" {
+  description = "Slack webhook URL stored in Secrets Manager for Alertmanager."
+  type        = string
+  sensitive   = true
+  default     = null
+}

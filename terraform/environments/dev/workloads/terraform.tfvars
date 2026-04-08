@@ -26,3 +26,4 @@ mq_engine_version     = "3.13"
 
 # JWT
 # jwt_secret must be provided via TF_VAR_jwt_secret or terraform.tfvars.local
+# slack_webhook_url must be provided via TF_VAR_slack_webhook_url or terraform.tfvars.local
