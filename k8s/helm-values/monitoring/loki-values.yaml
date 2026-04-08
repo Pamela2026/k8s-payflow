@@ -54,8 +54,7 @@ loki:
 singleBinary:
   replicas: 1
   persistence:
-    enabled: true
-    size: 5Gi
+    enabled: false
   resources:
     requests:
       cpu: 100m
