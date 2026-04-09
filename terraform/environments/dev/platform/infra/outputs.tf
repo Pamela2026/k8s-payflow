@@ -42,8 +42,3 @@ output "ecr_repository_urls" {
   description = "Map of ECR repository name to URL."
   value       = module.ecr.repository_urls
 }
-
-output "waf_web_acl_arn" {
-  description = "WAFv2 Web ACL ARN for the ALB (regional)."
-  value       = var.enable_waf ? aws_wafv2_web_acl.alb[0].arn : null
-}

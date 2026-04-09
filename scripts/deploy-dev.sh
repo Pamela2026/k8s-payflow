@@ -26,6 +26,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FOUNDATION_DIR="$ROOT_DIR/terraform/environments/$ENV/foundation"
 PLATFORM_INFRA_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/infra"
 WORKLOADS_DIR="$ROOT_DIR/terraform/environments/$ENV/workloads"
+EDGE_DIR="$ROOT_DIR/terraform/environments/$ENV/edge"
 PLATFORM_ADDONS_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/addons"
 
 tf_apply() {
@@ -48,6 +49,9 @@ if [[ -z "$RDS_PASSWORD" || -z "$JWT_SECRET" || -z "$MQ_PASSWORD" ]]; then
 fi
 # Workloads depend on platform/infra outputs and require secrets.
 tf_apply "$WORKLOADS_DIR"
+
+# Edge (WAF/CDN) should run after ingress ALB exists.
+tf_apply "$EDGE_DIR"
 
 # Addons should run after workloads if they depend on Secrets Manager values.
 tf_apply "$PLATFORM_ADDONS_DIR"

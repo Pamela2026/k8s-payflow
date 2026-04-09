@@ -32,6 +32,20 @@ resource "aws_security_group" "this" {
   tags = var.tags
 }
 
+## Custom parameter group with SSL not enforced. ##
+resource "aws_db_parameter_group" "this" {
+  name   = "${var.name_prefix}-postgres-params"
+  family = "postgres${split(".", var.engine_version)[0]}"
+
+  parameter {
+    name         = "rds.force_ssl"
+    value        = "0"
+    apply_method = "pending-reboot"
+  }
+
+  tags = var.tags
+}
+
 ## RDS Postgres instance. ##
 resource "aws_db_instance" "this" {
   identifier = "${var.name_prefix}-postgres"
@@ -52,6 +66,7 @@ resource "aws_db_instance" "this" {
   multi_az             = var.multi_az
   storage_encrypted    = var.storage_encrypted
   backup_retention_period = var.backup_retention_period
+  parameter_group_name = aws_db_parameter_group.this.name
 
   skip_final_snapshot = var.skip_final_snapshot
   deletion_protection = var.deletion_protection

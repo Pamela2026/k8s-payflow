@@ -11,9 +11,9 @@ resource "aws_security_group" "this" {
   dynamic "ingress" {
     for_each = var.allowed_sg_ids
     content {
-      description     = "RabbitMQ AMQP from EKS nodes"
-      from_port       = 5672
-      to_port         = 5672
+      description     = "RabbitMQ AMQPS from EKS nodes"
+      from_port       = 5671
+      to_port         = 5671
       protocol        = "tcp"
       security_groups = [ingress.value]
     }

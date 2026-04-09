@@ -24,10 +24,6 @@ ecr_repositories = [
   "payflow-wallet-wallet-service"
 ]
 
-enable_waf     = true
-waf_rate_limit = 2000
-
-
 tags = {
   Owner = "payflow-wallet"
 }

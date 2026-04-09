@@ -1086,3 +1086,87 @@ dashboards:
             ]
           }
         }
+    kubecost-overview:
+      json: |
+        {
+          "id": null,
+          "title": "Kubecost Overview",
+          "timezone": "browser",
+          "schemaVersion": 38,
+          "version": 1,
+          "refresh": "60s",
+          "tags": ["kubecost", "cost"],
+          "templating": {
+            "list": [
+              {
+                "name": "namespace",
+                "type": "query",
+                "datasource": "Prometheus",
+                "query": "label_values(kubecost_namespace_cost, namespace)",
+                "current": { "text": "payflow", "value": "payflow" }
+              }
+            ]
+          },
+          "panels": [
+            {
+              "type": "stat",
+              "title": "Cluster Cost (Daily)",
+              "description": "Estimated daily cluster cost from Kubecost metrics.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kubecost_cluster_cost) or vector(0)" }
+              ],
+              "gridPos": { "x": 0, "y": 0, "w": 8, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "Namespace Cost (Daily)",
+              "description": "Estimated daily cost for the selected namespace.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kubecost_namespace_cost{namespace=\"$namespace\"}) or vector(0)" }
+              ],
+              "gridPos": { "x": 8, "y": 0, "w": 8, "h": 4 }
+            },
+            {
+              "type": "stat",
+              "title": "Idle Cost (Daily)",
+              "description": "Estimated daily idle cost for the cluster.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kubecost_idle_cost) or vector(0)" }
+              ],
+              "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 }
+            },
+            {
+              "type": "timeseries",
+              "title": "Namespace Cost Trend",
+              "description": "Cost trend for the selected namespace.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kubecost_namespace_cost{namespace=\"$namespace\"}) or vector(0)", "legendFormat": "{{namespace}}" }
+              ],
+              "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
+            },
+            {
+              "type": "timeseries",
+              "title": "Cluster Cost Trend",
+              "description": "Total cluster cost trend.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "sum(kubecost_cluster_cost) or vector(0)", "legendFormat": "cluster" }
+              ],
+              "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
+            },
+            {
+              "type": "table",
+              "title": "Top Namespace Costs",
+              "description": "Top namespaces by estimated daily cost.",
+              "datasource": "Prometheus",
+              "targets": [
+                { "expr": "topk(5, sum by (namespace) (kubecost_namespace_cost))", "instant": true }
+              ],
+              "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 }
+            }
+          ]
+        }

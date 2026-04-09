@@ -26,6 +26,7 @@ FOUNDATION_DIR="$ROOT_DIR/terraform/environments/$ENV/foundation"
 PLATFORM_INFRA_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/infra"
 PLATFORM_ADDONS_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/addons"
 WORKLOADS_DIR="$ROOT_DIR/terraform/environments/$ENV/workloads"
+EDGE_DIR="$ROOT_DIR/terraform/environments/$ENV/edge"
 
 confirm_destroy() {
   if [[ "$AUTO_APPROVE" == "true" ]]; then
@@ -65,6 +66,7 @@ fi
 
 # Local destroys (reverse order)
 tf_destroy "$PLATFORM_ADDONS_DIR"
+tf_destroy "$EDGE_DIR"
 tf_destroy "$WORKLOADS_DIR"
 tf_destroy "$PLATFORM_INFRA_DIR"
 if [[ "$SKIP_FOUNDATION" != "true" ]]; then
