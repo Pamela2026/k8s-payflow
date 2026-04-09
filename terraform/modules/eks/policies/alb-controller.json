@@ -64,6 +64,7 @@
         "elasticloadbalancing:DeleteListener",
         "elasticloadbalancing:DeleteRule",
         "elasticloadbalancing:ModifyLoadBalancerAttributes",
+        "elasticloadbalancing:SetWebACL",
         "elasticloadbalancing:ModifyTargetGroup",
         "elasticloadbalancing:ModifyTargetGroupAttributes",
         "elasticloadbalancing:ModifyListener",
