@@ -52,3 +52,55 @@ module "ecr" {
   repositories = var.ecr_repositories
   tags         = local.tags
 }
+
+module "waf" {
+  source = "../../../../modules/waf"
+
+  enabled     = var.enable_waf
+  name_prefix = local.name_prefix
+  rate_limit  = var.waf_rate_limit
+  enable_common_rule_set     = var.waf_enable_common_rule_set
+  enable_bad_inputs_rule_set = var.waf_enable_bad_inputs_rule_set
+  enable_sqli_rule_set       = var.waf_enable_sqli_rule_set
+  enable_rate_limit          = var.waf_enable_rate_limit
+  common_rule_priority       = var.waf_common_rule_priority
+  bad_inputs_rule_priority   = var.waf_bad_inputs_rule_priority
+  sqli_rule_priority         = var.waf_sqli_rule_priority
+  rate_limit_priority        = var.waf_rate_limit_priority
+  tags        = local.tags
+}
+
+data "aws_route53_zone" "alb_cert" {
+  count  = var.enable_alb_cert && var.hosted_zone_id != null ? 1 : 0
+  zone_id = var.hosted_zone_id
+}
+
+resource "aws_acm_certificate" "alb" {
+  count = var.enable_alb_cert && var.alb_cert_domain != null ? 1 : 0
+
+  domain_name       = var.alb_cert_domain
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = local.tags
+}
+
+resource "aws_route53_record" "alb_cert_validation" {
+  count = var.enable_alb_cert && var.alb_cert_domain != null ? 1 : 0
+
+  zone_id = data.aws_route53_zone.alb_cert[0].zone_id
+  name    = aws_acm_certificate.alb[0].domain_validation_options[0].resource_record_name
+  type    = aws_acm_certificate.alb[0].domain_validation_options[0].resource_record_type
+  records = [aws_acm_certificate.alb[0].domain_validation_options[0].resource_record_value]
+  ttl     = 300
+}
+
+resource "aws_acm_certificate_validation" "alb" {
+  count = var.enable_alb_cert && var.alb_cert_domain != null ? 1 : 0
+
+  certificate_arn         = aws_acm_certificate.alb[0].arn
+  validation_record_fqdns = [aws_route53_record.alb_cert_validation[0].fqdn]
+}

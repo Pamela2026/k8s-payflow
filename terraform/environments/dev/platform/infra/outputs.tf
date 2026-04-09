@@ -42,3 +42,13 @@ output "ecr_repository_urls" {
   description = "Map of ECR repository name to URL."
   value       = module.ecr.repository_urls
 }
+
+output "waf_web_acl_arn" {
+  description = "WAFv2 Web ACL ARN for the ALB (regional)."
+  value       = module.waf.web_acl_arn
+}
+
+output "alb_certificate_arn" {
+  description = "ACM certificate ARN for the ALB."
+  value       = var.enable_alb_cert && var.alb_cert_domain != null ? aws_acm_certificate.alb[0].arn : null
+}

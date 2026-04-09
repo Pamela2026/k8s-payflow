@@ -289,7 +289,7 @@ spec:
               app: rabbitmq
       ports:
         - protocol: TCP
-          port: 5672
+          port: 5671
 ---
 # #### rabbitmq-management-from-services allows selected services to access RabbitMQ management (15672). ####
 apiVersion: networking.k8s.io/v1
@@ -479,11 +479,11 @@ spec:
               app: rabbitmq
       ports:
         - protocol: TCP
-          port: 5672
+          port: 5671
         - protocol: TCP
           port: 15672
 ---
-# #### rabbitmq-ingress-from-services allows services to access RabbitMQ on 5672. ####
+# #### rabbitmq-ingress-from-services allows services to access RabbitMQ on 5671. ####
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -511,7 +511,7 @@ spec:
               app: prometheus-rabbitmq-exporter
       ports:
         - protocol: TCP
-          port: 5672
+          port: 5671
 ---
 # #### exporters-egress-to-infra-legacy-label allows exporter pods using legacy app labels to reach infra services. ####
 apiVersion: networking.k8s.io/v1
@@ -551,7 +551,7 @@ spec:
               app: rabbitmq
       ports:
         - protocol: TCP
-          port: 5672
+          port: 5671
         - protocol: TCP
           port: 15672
 ---

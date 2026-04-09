@@ -24,6 +24,17 @@ ecr_repositories = [
   "payflow-wallet-wallet-service"
 ]
 
+enable_waf     = true
+waf_rate_limit = 2000
+waf_enable_common_rule_set     = true
+waf_enable_bad_inputs_rule_set = true
+waf_enable_sqli_rule_set       = true
+waf_enable_rate_limit          = true
+
+enable_alb_cert = true
+alb_cert_domain = "computehub.online"
+hosted_zone_id  = "Z02373822JO7MP3G5ZLH"
+
 tags = {
   Owner = "payflow-wallet"
 }

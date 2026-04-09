@@ -7,11 +7,10 @@ metadata:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
-    # HTTPS (enable when Route 53 + ACM are ready)
-    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
-    # alb.ingress.kubernetes.io/ssl-redirect: "443"
-    # alb.ingress.kubernetes.io/certificate-arn: <acm-certificate-arn>
+    alb.ingress.kubernetes.io/listen-ports: '${ALB_LISTEN_PORTS}'
+    alb.ingress.kubernetes.io/wafv2-acl-arn: ${WAF_WEB_ACL_ARN}
+    alb.ingress.kubernetes.io/ssl-redirect: "${ALB_SSL_REDIRECT}"
+    alb.ingress.kubernetes.io/certificate-arn: ${ALB_CERT_ARN}
 spec:
   ingressClassName: alb
   rules:

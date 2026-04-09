@@ -37,3 +37,41 @@ patches:
   - path: patch-namespace-label.yaml
   - path: patch-frontend-service.yaml
   - path: patch-backup-pvc-storageclass.yaml
+
+configMapGenerator:
+  - name: edge-config
+    literals:
+      - WAF_WEB_ACL_ARN=PLACEHOLDER
+      - ALB_LISTEN_PORTS=[{"HTTP":80}]
+      - ALB_SSL_REDIRECT=443
+      - ALB_CERT_ARN=PLACEHOLDER
+
+vars:
+  - name: WAF_WEB_ACL_ARN
+    objref:
+      kind: ConfigMap
+      name: edge-config
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.WAF_WEB_ACL_ARN
+  - name: ALB_LISTEN_PORTS
+    objref:
+      kind: ConfigMap
+      name: edge-config
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ALB_LISTEN_PORTS
+  - name: ALB_SSL_REDIRECT
+    objref:
+      kind: ConfigMap
+      name: edge-config
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ALB_SSL_REDIRECT
+  - name: ALB_CERT_ARN
+    objref:
+      kind: ConfigMap
+      name: edge-config
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ALB_CERT_ARN
