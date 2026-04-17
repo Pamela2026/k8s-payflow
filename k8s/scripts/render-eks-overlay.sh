@@ -2,16 +2,12 @@
 # ============================================
 # RENDER EKS OVERLAY (BASH)
 # ============================================
-# #### Renders ExternalName services + ALB ingress from Terraform outputs or flags. ####
-# #### Writes overlays/<env>/externalname-services.yaml and overlays/<env>/alb-ingress.yaml. ####
+# #### Renders the ALB ingress from Terraform outputs or flags. ####
+# #### Writes overlays/<env>/alb-ingress.yaml. ####
 set -euo pipefail
 
 env="dev"
-services_dir=""
 dns_dir=""
-rds_endpoint=""
-redis_endpoint=""
-rabbitmq_endpoint=""
 acm_arn=""
 app_domain=""
 api_domain=""
@@ -21,11 +17,7 @@ waf_acl_arn=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --env) env="$2"; shift 2 ;;
-    --services-dir) services_dir="$2"; shift 2 ;;
     --dns-dir) dns_dir="$2"; shift 2 ;;
-    --rds-endpoint) rds_endpoint="$2"; shift 2 ;;
-    --redis-endpoint) redis_endpoint="$2"; shift 2 ;;
-    --rabbitmq-endpoint) rabbitmq_endpoint="$2"; shift 2 ;;
     --acm-arn) acm_arn="$2"; shift 2 ;;
     --app-domain) app_domain="$2"; shift 2 ;;
     --api-domain) api_domain="$2"; shift 2 ;;
@@ -61,33 +53,7 @@ get_value() {
   echo "$json" | jq -r --arg k "$key" '.[$k].value // empty'
 }
 
-sanitize_host() {
-  local v="$1"
-  v="${v#http://}"
-  v="${v#https://}"
-  v="${v#amqp://}"
-  v="${v#amqps://}"
-  v="${v%%/*}"
-  v="${v%%:*}"
-  echo "$v"
-}
-
-services_json="$(get_outputs "$services_dir" || true)"
 dns_json="$(get_outputs "$dns_dir" || true)"
-
-if [[ -z "$rds_endpoint" ]]; then
-  rds_endpoint="$(get_value "$services_json" "rds_endpoint")"
-  [[ -z "$rds_endpoint" ]] && rds_endpoint="$(get_value "$services_json" "db_endpoint")"
-fi
-if [[ -z "$redis_endpoint" ]]; then
-  redis_endpoint="$(get_value "$services_json" "redis_endpoint")"
-  [[ -z "$redis_endpoint" ]] && redis_endpoint="$(get_value "$services_json" "elasticache_endpoint")"
-  [[ -z "$redis_endpoint" ]] && redis_endpoint="$(get_value "$services_json" "redis_primary_endpoint")"
-fi
-if [[ -z "$rabbitmq_endpoint" ]]; then
-  rabbitmq_endpoint="$(get_value "$services_json" "rabbitmq_endpoint")"
-  [[ -z "$rabbitmq_endpoint" ]] && rabbitmq_endpoint="$(get_value "$services_json" "mq_endpoint")"
-fi
 if [[ "$http_only" != "true" ]]; then
   if [[ -z "$acm_arn" ]]; then
     acm_arn="$(get_value "$dns_json" "acm_certificate_arn")"
@@ -108,9 +74,6 @@ if [[ -z "$waf_acl_arn" ]]; then
 fi
 
 missing=()
-[[ -z "$rds_endpoint" ]] && missing+=("rds_endpoint/db_endpoint")
-[[ -z "$redis_endpoint" ]] && missing+=("redis_endpoint/elasticache_endpoint")
-[[ -z "$rabbitmq_endpoint" ]] && missing+=("rabbitmq_endpoint/mq_endpoint")
 if [[ "$http_only" != "true" ]]; then
   [[ -z "$acm_arn" ]] && missing+=("acm_certificate_arn")
   [[ -z "$app_domain" ]] && missing+=("app_domain")
@@ -121,35 +84,6 @@ if [[ "${#missing[@]}" -gt 0 ]]; then
   echo "Missing required values: ${missing[*]}" >&2
   exit 1
 fi
-
-cat > "$overlay_dir/externalname-services.yaml" <<EOF
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-service
-  namespace: payflow
-spec:
-  type: ExternalName
-  externalName: $(sanitize_host "$rds_endpoint")
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-service
-  namespace: payflow
-spec:
-  type: ExternalName
-  externalName: $(sanitize_host "$redis_endpoint")
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: rabbitmq-service
-  namespace: payflow
-spec:
-  type: ExternalName
-  externalName: $(sanitize_host "$rabbitmq_endpoint")
-EOF
 
 if [[ "$http_only" == "true" ]]; then
 waf_annotation=""
@@ -204,7 +138,8 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/certificate-arn: $acm_arn
-${waf_annotation}
+    alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": {"Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'${waf_annotation}
+    
 spec:
   ingressClassName: alb
   rules:
@@ -238,5 +173,4 @@ spec:
 EOF
 fi
 
-echo "Wrote $overlay_dir/externalname-services.yaml"
 echo "Wrote $overlay_dir/alb-ingress.yaml"

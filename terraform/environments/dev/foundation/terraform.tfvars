@@ -14,27 +14,28 @@ spoke_public_subnet_cidrs       = ["10.1.10.0/24", "10.1.20.0/24", "10.1.30.0/24
 spoke_private_subnet_cidrs      = ["10.1.110.0/24", "10.1.120.0/24", "10.1.130.0/24"]
 spoke_data_private_subnet_cidrs = ["10.1.210.0/24", "10.1.220.0/24", "10.1.230.0/24"]
 
-enable_tgw                  = true
-enable_spoke_nat_gateway    = true
-create_vpc_endpoints        = true
-create_s3_gateway_endpoint  = true
-interface_endpoint_services = ["ecr.api", "ecr.dkr", "sts", "secretsmanager", "logs", "kms"]
+enable_tgw                        = true
+enable_spoke_nat_gateway          = true
+enable_multi_az_spoke_nat_gateway = true
+create_vpc_endpoints              = true
+create_s3_gateway_endpoint        = true
+interface_endpoint_services       = ["ecr.api", "ecr.dkr", "sts", "secretsmanager", "logs", "kms"]
 
-enable_bastion             = true
-bastion_instance_type       = "t3.micro"
-bastion_ssh_cidr_blocks     = ["102.91.93.17/32"]
-bastion_key_name            = "payflow-bastion-key"
-bastion_ami_id              = null
+enable_bastion          = true
+bastion_instance_type   = "t3.micro"
+bastion_ssh_cidr_blocks = ["102.91.93.17/32"]
+bastion_key_name        = "payflow-bastion-key"
+bastion_ami_id          = null
 
 
 tags = {
   Owner = "payflow-wallet"
 }
 
-#---- Cost Ops (AWS Budgets + Anomaly Detection) ----
-enable_cost_ops = true
-cost_ops_budget_amount = 500
-cost_ops_budget_unit = "USD"
-cost_ops_anomaly_threshold = 100
-cost_ops_anomaly_frequency = "DAILY"
-cost_ops_email_addresses = ["pamelapateick464@gmail.com"]
+#---- FinOps (AWS Budgets + Anomaly Detection) ----
+enable_fin_ops            = true
+fin_ops_budget_amount     = 500
+fin_ops_budget_unit       = "USD"
+fin_ops_anomaly_threshold = 100
+fin_ops_anomaly_frequency = "DAILY"
+fin_ops_email_addresses   = ["pamelapateick464@gmail.com"]

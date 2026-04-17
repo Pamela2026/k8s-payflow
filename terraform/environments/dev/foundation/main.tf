@@ -40,34 +40,39 @@ module "vpc" {
 module "bastion" {
   source = "../../../modules/bastion"
 
-  name_prefix = local.name_prefix
-  tags        = local.tags
-  region      = var.region
+  name_prefix      = local.name_prefix
+  tags             = local.tags
+  region           = var.region
   eks_cluster_name = var.eks_cluster_name
 
   vpc_id    = module.vpc.hub_vpc_id
   subnet_id = module.vpc.hub_public_subnet_ids[0]
 
-  enable_bastion     = var.enable_bastion
-  instance_type      = var.bastion_instance_type
-  ssh_cidr_blocks    = var.bastion_ssh_cidr_blocks
-  key_name           = var.bastion_key_name
-  ami_id             = var.bastion_ami_id
+  enable_bastion          = var.enable_bastion
+  instance_type           = var.bastion_instance_type
+  ssh_cidr_blocks         = var.bastion_ssh_cidr_blocks
+  key_name                = var.bastion_key_name
+  ami_id                  = var.bastion_ami_id
   tfstate_bucket_name     = var.tfstate_bucket_name
   tfstate_lock_table_name = var.tfstate_lock_table_name
 }
 
-module "cost_ops" {
-  source = "../../../modules/cost_ops"
+moved {
+  from = module.cost_ops
+  to   = module.fin_ops
+}
+
+module "fin_ops" {
+  source = "../../../modules/fin_ops"
 
   name_prefix = local.name_prefix
   tags        = local.tags
 
-  enable_cost_ops         = var.enable_cost_ops
-  budget_amount           = var.cost_ops_budget_amount
-  budget_unit             = var.cost_ops_budget_unit
-  budget_email_addresses  = var.cost_ops_email_addresses
-  anomaly_threshold       = var.cost_ops_anomaly_threshold
-  anomaly_frequency       = var.cost_ops_anomaly_frequency
-  anomaly_email_addresses = var.cost_ops_email_addresses
+  enable_fin_ops          = var.enable_fin_ops
+  budget_amount           = var.fin_ops_budget_amount
+  budget_unit             = var.fin_ops_budget_unit
+  budget_email_addresses  = var.fin_ops_email_addresses
+  anomaly_threshold       = var.fin_ops_anomaly_threshold
+  anomaly_frequency       = var.fin_ops_anomaly_frequency
+  anomaly_email_addresses = var.fin_ops_email_addresses
 }

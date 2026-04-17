@@ -13,6 +13,13 @@ output "rabbitmq_endpoint" {
   value       = module.rabbitmq.endpoint
 }
 
+# output "rabbitmq_hostname" {
+#   value = replace(
+#     replace(aws_mq_broker.main.instances[0].endpoints[0], "amqps://", ""),
+#     ":5671",
+#     ""
+#   )
+# }
 output "db_secret_arn" {
   description = "DB Secrets Manager ARN."
   value       = module.secrets.db_secret_arn

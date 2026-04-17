@@ -1,9 +1,9 @@
 # ============================================
-# COST OPS VARIABLES
+# FIN OPS VARIABLES
 # ============================================
 
 variable "name_prefix" {
-  description = "Prefix for cost ops resources."
+  description = "Prefix for FinOps resources."
   type        = string
 }
 
@@ -13,8 +13,8 @@ variable "tags" {
   default     = {}
 }
 
-variable "enable_cost_ops" {
-  description = "Whether to enable AWS cost operations (budgets + anomaly detection)."
+variable "enable_fin_ops" {
+  description = "Whether to enable AWS FinOps resources (budgets + anomaly detection)."
   type        = bool
   default     = false
 }

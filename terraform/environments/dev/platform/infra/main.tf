@@ -4,6 +4,14 @@
 # #### Creates private EKS cluster and core add-ons. ####
 # #### Depends on dev foundation outputs. ####
 
+resource "local_file" "alb_ingress" {
+  filename = "${path.root}/../../../../../overlays/dev/alb-ingress.yaml"
+  content = templatefile("${path.root}/templates/alb-ingress.yaml.tpl", {
+    waf_web_acl_arn     = module.waf.web_acl_arn
+    alb_certificate_arn = var.enable_alb_cert && var.alb_cert_domain != null ? aws_acm_certificate.alb[0].arn : ""
+  })
+}
+
 data "terraform_remote_state" "foundation" {
   backend = "s3"
   config = {
@@ -89,12 +97,18 @@ resource "aws_acm_certificate" "alb" {
 }
 
 resource "aws_route53_record" "alb_cert_validation" {
-  count = var.enable_alb_cert && var.alb_cert_domain != null ? 1 : 0
+  for_each = var.enable_alb_cert && var.alb_cert_domain != null ? {
+    for dvo in aws_acm_certificate.alb[0].domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      type   = dvo.resource_record_type
+      record = dvo.resource_record_value
+    }
+  } : {}
 
   zone_id = data.aws_route53_zone.alb_cert[0].zone_id
-  name    = aws_acm_certificate.alb[0].domain_validation_options[0].resource_record_name
-  type    = aws_acm_certificate.alb[0].domain_validation_options[0].resource_record_type
-  records = [aws_acm_certificate.alb[0].domain_validation_options[0].resource_record_value]
+  name    = each.value.name
+  type    = each.value.type
+  records = [each.value.record]
   ttl     = 300
 }
 
@@ -102,5 +116,5 @@ resource "aws_acm_certificate_validation" "alb" {
   count = var.enable_alb_cert && var.alb_cert_domain != null ? 1 : 0
 
   certificate_arn         = aws_acm_certificate.alb[0].arn
-  validation_record_fqdns = [aws_route53_record.alb_cert_validation[0].fqdn]
+  validation_record_fqdns = [for r in aws_route53_record.alb_cert_validation : r.fqdn]
 }

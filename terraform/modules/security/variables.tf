@@ -29,6 +29,13 @@ variable "mq_secret" {
   })
 }
 
+variable "redis_secret" {
+  description = "Redis secret payload."
+  type = object({
+    url = string
+  })
+}
+
 variable "jwt_secret" {
   description = "JWT secret value."
   type        = string

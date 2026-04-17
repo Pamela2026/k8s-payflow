@@ -452,25 +452,7 @@ dashboards:
               "gridPos": {
                 "x": 0,
                 "y": 24,
-                "w": 8,
-                "h": 8
-              }
-            },
-            {
-              "type": "timeseries",
-              "title": "Auth/Ratelimit Error Rate by Service (%)",
-              "description": "401/403/429 only: auth and rate-limit errors by service.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "100 * (sum by (service, status_code) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\",status_code=~\"401|403|429\"}[5m])) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"$namespace\",service=~\"$service\"}[5m])), 0.001))",
-                  "legendFormat": "{{service}} {{status_code}}"
-                }
-              ],
-              "gridPos": {
-                "x": 8,
-                "y": 24,
-                "w": 8,
+                "w": 12,
                 "h": 8
               }
             },
@@ -486,9 +468,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 16,
+                "x": 12,
                 "y": 24,
-                "w": 8,
+                "w": 12,
                 "h": 8
               }
             },
@@ -1010,24 +992,6 @@ dashboards:
             },
             {
               "type": "timeseries",
-              "title": "Failed Transfers by Reason (5m)",
-              "description": "Top failure reasons over the last 5 minutes.",
-              "datasource": "Prometheus",
-              "targets": [
-                {
-                  "expr": "topk(5, sum by (reason) (increase(failed_transfers_total{namespace=\"$namespace\"}[5m])))",
-                  "legendFormat": "{{reason}}"
-                }
-              ],
-              "gridPos": {
-                "x": 0,
-                "y": 120,
-                "w": 8,
-                "h": 8
-              }
-            },
-            {
-              "type": "timeseries",
               "title": "Transaction Queue Depth",
               "description": "Current backlog in transaction queues.",
               "datasource": "Prometheus",
@@ -1038,9 +1002,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 8,
+                "x": 0,
                 "y": 120,
-                "w": 8,
+                "w": 12,
                 "h": 8
               }
             },
@@ -1060,9 +1024,9 @@ dashboards:
                 }
               ],
               "gridPos": {
-                "x": 16,
+                "x": 12,
                 "y": 120,
-                "w": 8,
+                "w": 12,
                 "h": 8
               }
             }

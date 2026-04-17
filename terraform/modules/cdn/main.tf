@@ -25,9 +25,9 @@ resource "aws_route53_record" "app_cert_validation" {
   count = var.enabled && var.app_domain != null ? 1 : 0
 
   zone_id = data.aws_route53_zone.app[0].zone_id
-  name    = aws_acm_certificate.app[0].domain_validation_options[0].resource_record_name
-  type    = aws_acm_certificate.app[0].domain_validation_options[0].resource_record_type
-  records = [aws_acm_certificate.app[0].domain_validation_options[0].resource_record_value]
+  name    = element(aws_acm_certificate.app[0].domain_validation_options[*].resource_record_name, 0)
+  type    = element(aws_acm_certificate.app[0].domain_validation_options[*].resource_record_type, 0)
+  records = [element(aws_acm_certificate.app[0].domain_validation_options[*].resource_record_value, 0)]
   ttl     = 300
 }
 
@@ -40,7 +40,8 @@ resource "aws_acm_certificate_validation" "app" {
 }
 
 resource "aws_cloudfront_distribution" "app" {
-  count = var.enabled && var.app_domain != null && local.alb_origin_dns != null ? 1 : 0
+  count      = var.enabled && var.app_domain != null && local.alb_origin_dns != null ? 1 : 0
+  depends_on = [aws_acm_certificate_validation.app]
 
   enabled             = true
   is_ipv6_enabled     = true
@@ -66,6 +67,7 @@ resource "aws_cloudfront_distribution" "app" {
     cached_methods         = var.cached_methods
     target_origin_id       = "alb-origin"
     viewer_protocol_policy = var.viewer_protocol_policy
+
 
     cache_policy_id          = var.cache_policy_id
     origin_request_policy_id = var.origin_request_policy_id

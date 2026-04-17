@@ -40,14 +40,14 @@ module "rds" {
   name_prefix = local.name_prefix
   tags        = local.tags
 
-  vpc_id       = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  subnet_ids   = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
+  vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
+  subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
   allowed_sg_ids = [data.terraform_remote_state.platform.outputs.node_security_group_id]
 
-  db_name        = var.rds_db_name
-  username       = var.rds_username
-  password       = var.rds_password
-  instance_class = var.rds_instance_class
+  db_name                 = var.rds_db_name
+  username                = var.rds_username
+  password                = var.rds_password
+  instance_class          = var.rds_instance_class
   backup_retention_period = var.rds_backup_retention_period
 }
 
@@ -57,8 +57,8 @@ module "redis" {
   name_prefix = local.name_prefix
   tags        = local.tags
 
-  vpc_id       = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  subnet_ids   = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
+  vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
+  subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
   allowed_sg_ids = [data.terraform_remote_state.platform.outputs.node_security_group_id]
 
   node_type = var.redis_node_type
@@ -70,14 +70,14 @@ module "rabbitmq" {
   name_prefix = local.name_prefix
   tags        = local.tags
 
-  vpc_id       = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  subnet_ids   = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
+  vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
+  subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
   allowed_sg_ids = [data.terraform_remote_state.platform.outputs.node_security_group_id]
 
-  username           = var.mq_username
-  password           = var.mq_password
-  host_instance_type = var.mq_host_instance_type
-  engine_version     = var.mq_engine_version
+  username                   = var.mq_username
+  password                   = var.mq_password
+  host_instance_type         = var.mq_host_instance_type
+  engine_version             = var.mq_engine_version
   auto_minor_version_upgrade = true
 }
 
@@ -101,6 +101,10 @@ module "secrets" {
     password = var.mq_password
   }
 
-  jwt_secret = var.jwt_secret
+  redis_secret = {
+    url = "redis://${module.redis.primary_endpoint}:6379"
+  }
+
+  jwt_secret        = var.jwt_secret
   slack_webhook_url = var.slack_webhook_url
 }

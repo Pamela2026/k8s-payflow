@@ -1,9 +1,9 @@
 # ============================================
-# COST OPS (AWS)
+# FIN OPS (AWS)
 # ============================================
 
 resource "aws_budgets_budget" "monthly_cost" {
-  count = var.enable_cost_ops ? 1 : 0
+  count = var.enable_fin_ops ? 1 : 0
 
   name         = "${var.name_prefix}-monthly-cost-budget"
   budget_type  = "COST"
@@ -37,7 +37,7 @@ resource "aws_budgets_budget" "monthly_cost" {
 }
 
 resource "aws_ce_anomaly_monitor" "service" {
-  count = var.enable_cost_ops ? 1 : 0
+  count = var.enable_fin_ops ? 1 : 0
 
   name              = "${var.name_prefix}-service-anomaly-monitor"
   monitor_type      = "DIMENSIONAL"
@@ -45,7 +45,7 @@ resource "aws_ce_anomaly_monitor" "service" {
 }
 
 resource "aws_ce_anomaly_subscription" "service" {
-  count = var.enable_cost_ops ? 1 : 0
+  count = var.enable_fin_ops ? 1 : 0
 
   name             = "${var.name_prefix}-service-anomaly-subscription"
   frequency        = var.anomaly_frequency

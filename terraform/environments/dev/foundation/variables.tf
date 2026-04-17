@@ -136,37 +136,37 @@ variable "bastion_ami_id" {
   default     = null
 }
 
-variable "enable_cost_ops" {
-  description = "Whether to enable AWS cost operations (budgets + anomaly detection)."
+variable "enable_fin_ops" {
+  description = "Whether to enable AWS FinOps resources (budgets + anomaly detection)."
   type        = bool
   default     = false
 }
 
-variable "cost_ops_budget_amount" {
+variable "fin_ops_budget_amount" {
   description = "Monthly cost budget amount for alerts."
   type        = number
   default     = 500
 }
 
-variable "cost_ops_budget_unit" {
+variable "fin_ops_budget_unit" {
   description = "Currency unit for the cost budget."
   type        = string
   default     = "USD"
 }
 
-variable "cost_ops_anomaly_threshold" {
+variable "fin_ops_anomaly_threshold" {
   description = "Anomaly detection threshold in USD."
   type        = number
   default     = 100
 }
 
-variable "cost_ops_anomaly_frequency" {
+variable "fin_ops_anomaly_frequency" {
   description = "Anomaly detection email frequency."
   type        = string
   default     = "DAILY"
 }
 
-variable "cost_ops_email_addresses" {
+variable "fin_ops_email_addresses" {
   description = "Email addresses for budget + anomaly alerts."
   type        = list(string)
   default     = []

@@ -371,6 +371,8 @@ resource "aws_instance" "bastion" {
 #!/bin/bash
 set -euo pipefail
 dnf install -y jq tar gzip unzip git nano awscli
+dnf install -y amazon-ssm-agent
+systemctl enable --now amazon-ssm-agent
 
 # Install Terraform
 TERRAFORM_VERSION="1.6.6"

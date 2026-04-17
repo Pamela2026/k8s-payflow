@@ -7,14 +7,21 @@ metadata:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '${ALB_LISTEN_PORTS}'
-    alb.ingress.kubernetes.io/wafv2-acl-arn: ${WAF_WEB_ACL_ARN}
-    alb.ingress.kubernetes.io/ssl-redirect: "${ALB_SSL_REDIRECT}"
-    alb.ingress.kubernetes.io/certificate-arn: ${ALB_CERT_ARN}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80,"HTTPS":443}]'
+    alb.ingress.kubernetes.io/wafv2-acl-arn: "<<wafv2-acl-arn>>" #Change to your WAFv2 ACL ARN
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: "<<certificate-arn>>" #Change to your ACM certificate ARN
+    alb.ingress.kubernetes.io/healthcheck-path: /health #Change to your health check path
+    alb.ingress.kubernetes.io/cors-allow-origin: 'https://computehub.online' #Change to your frontend domain
+    alb.ingress.kubernetes.io/cors-allow-methods: 'GET, PUT, POST, DELETE, OPTIONS'
+    alb.ingress.kubernetes.io/cors-allow-headers: 'keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,custom-header-1,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,authorization'
+    alb.ingress.kubernetes.io/cors-allow-credentials: 'true'
+
 spec:
   ingressClassName: alb
   rules:
-  - http:
+  - host: computehub.online  #Change to your domain
+    http:
       paths:
       - path: /
         pathType: Prefix

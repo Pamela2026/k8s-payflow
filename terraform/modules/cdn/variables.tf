@@ -29,9 +29,9 @@ variable "comment" {
 }
 
 variable "origin_protocol_policy" {
-  description = "Origin protocol policy."
+  description = "Origin protocol policy for CloudFront to ALB communication."
   type        = string
-  default     = "http-only"
+  default     = "https-only"
 }
 
 variable "origin_ssl_protocols" {
@@ -61,13 +61,13 @@ variable "viewer_protocol_policy" {
 variable "cache_policy_id" {
   description = "Managed cache policy ID."
   type        = string
-  default     = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+  default     = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
 }
 
 variable "origin_request_policy_id" {
-  description = "Managed origin request policy ID."
+  description = "Origin request policy ID. Defaults to Managed-AllViewer so the Host header reaches the ALB origin."
   type        = string
-  default     = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf"
+  default     = "216adef6-5c7f-47e4-b989-5492eafa07d3"
 }
 
 variable "price_class" {

@@ -5,7 +5,7 @@ resource "aws_secretsmanager_secret" "db" {
 }
 
 resource "aws_secretsmanager_secret_version" "db" {
-  secret_id     = aws_secretsmanager_secret.db.id
+  secret_id = aws_secretsmanager_secret.db.id
   secret_string = jsonencode({
     host     = var.db_secret.host
     port     = var.db_secret.port
@@ -22,11 +22,24 @@ resource "aws_secretsmanager_secret" "mq" {
 }
 
 resource "aws_secretsmanager_secret_version" "mq" {
-  secret_id     = aws_secretsmanager_secret.mq.id
+  secret_id = aws_secretsmanager_secret.mq.id
   secret_string = jsonencode({
     endpoint = var.mq_secret.endpoint
     username = var.mq_secret.username
     password = var.mq_secret.password
+  })
+}
+
+## Secrets Manager: Redis connection details. ##
+resource "aws_secretsmanager_secret" "redis" {
+  name = "${var.name_prefix}-redis"
+  tags = var.tags
+}
+
+resource "aws_secretsmanager_secret_version" "redis" {
+  secret_id = aws_secretsmanager_secret.redis.id
+  secret_string = jsonencode({
+    url = var.redis_secret.url
   })
 }
 
@@ -37,7 +50,7 @@ resource "aws_secretsmanager_secret" "jwt" {
 }
 
 resource "aws_secretsmanager_secret_version" "jwt" {
-  secret_id     = aws_secretsmanager_secret.jwt.id
+  secret_id = aws_secretsmanager_secret.jwt.id
   secret_string = jsonencode({
     jwt_secret = var.jwt_secret
   })
@@ -54,7 +67,7 @@ resource "aws_secretsmanager_secret" "alertmanager_slack" {
 resource "aws_secretsmanager_secret_version" "alertmanager_slack" {
   count = var.slack_webhook_url != null && var.slack_webhook_url != "" ? 1 : 0
 
-  secret_id     = aws_secretsmanager_secret.alertmanager_slack[0].id
+  secret_id = aws_secretsmanager_secret.alertmanager_slack[0].id
   secret_string = jsonencode({
     webhook-url = var.slack_webhook_url
   })

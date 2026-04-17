@@ -12,3 +12,7 @@ output "acm_certificate_arn" {
   description = "ACM certificate ARN used for the distribution."
   value       = var.enabled && var.app_domain != null ? aws_acm_certificate.app[0].arn : null
 }
+
+# output "alb_origin_debug" {
+#   value = local.alb_origin_dns
+# }

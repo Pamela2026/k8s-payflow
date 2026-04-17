@@ -8,6 +8,11 @@ output "mq_secret_arn" {
   value       = aws_secretsmanager_secret.mq.arn
 }
 
+output "redis_secret_arn" {
+  description = "Redis secret ARN."
+  value       = aws_secretsmanager_secret.redis.arn
+}
+
 output "jwt_secret_arn" {
   description = "JWT secret ARN."
   value       = aws_secretsmanager_secret.jwt.arn

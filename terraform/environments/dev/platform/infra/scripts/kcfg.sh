@@ -1,8 +1,21 @@
 #!/usr/bin/env bash
-aws eks update-kubeconfig --name payflow-eks-dev --region us-east-1
+set -e
 
+REPO_DIR="/home/ssm-user/k8s-payflow"
+REPO_URL="https://github.com/Pamela2026/k8s-payflow.git"
 
+# Clone or pull repository
+if [ -d "$REPO_DIR" ]; then
+    echo "Repository already exists, pulling latest..."
+    cd "$REPO_DIR"
+    git pull
+else
+    echo "Cloning repository..."
+    git clone "$REPO_URL" "$REPO_DIR"
+    cd "$REPO_DIR"
+fi
 
+# Update kubeconfig
 export KUBECONFIG=/tmp/kubeconfig
 aws eks update-kubeconfig --name payflow-eks-dev --region us-east-1
 
@@ -12,6 +25,3 @@ kubectl wait --for=condition=Established crd/clustersecretstores.external-secret
 
 # Verify API resources are visible
 kubectl api-resources --api-group=external-secrets.io
-
-# Then apply
-kubectl apply -k /home/ssm-user/k8s-payflow/overlays/dev

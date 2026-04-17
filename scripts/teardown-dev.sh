@@ -65,9 +65,10 @@ if [[ "$K8S_TEARDOWN" == "true" ]]; then
 fi
 
 # Local destroys (reverse order)
-tf_destroy "$PLATFORM_ADDONS_DIR"
+
 tf_destroy "$EDGE_DIR"
 tf_destroy "$WORKLOADS_DIR"
+tf_destroy "$PLATFORM_ADDONS_DIR"
 tf_destroy "$PLATFORM_INFRA_DIR"
 if [[ "$SKIP_FOUNDATION" != "true" ]]; then
   tf_destroy "$FOUNDATION_DIR"
