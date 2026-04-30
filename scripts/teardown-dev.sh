@@ -25,7 +25,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FOUNDATION_DIR="$ROOT_DIR/terraform/environments/$ENV/foundation"
 PLATFORM_INFRA_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/infra"
 PLATFORM_ADDONS_DIR="$ROOT_DIR/terraform/environments/$ENV/platform/addons"
-WORKLOADS_DIR="$ROOT_DIR/terraform/environments/$ENV/workloads"
 EDGE_DIR="$ROOT_DIR/terraform/environments/$ENV/edge"
 
 confirm_destroy() {
@@ -52,6 +51,7 @@ tf_destroy() {
 confirm_destroy || { echo "Aborted."; exit 1; }
 
 # Optional Kubernetes teardown (k8s resources only).
+# Recommended: run this from the bastion so it can reach the private EKS API.
 if [[ "$K8S_TEARDOWN" == "true" ]]; then
   if ! command -v kubectl >/dev/null 2>&1; then
     echo "kubectl not found in PATH (required for K8S_TEARDOWN)" >&2
@@ -64,11 +64,26 @@ if [[ "$K8S_TEARDOWN" == "true" ]]; then
   fi
 fi
 
-# Local destroys (reverse order)
+# Destroy order:
+# 1) Kubernetes workloads first (so ingress controller can clean up ALB resources)
+# 2) Edge last-created Terraform (CloudFront/Route53) next
+# 3) platform/addons (Helm/Kubernetes providers) from the bastion
+# 4) platform/infra then foundation (AWS-only; safe from local)
 
 tf_destroy "$EDGE_DIR"
-tf_destroy "$WORKLOADS_DIR"
-tf_destroy "$PLATFORM_ADDONS_DIR"
+
+cat <<EOF
+
+==> Reminder
+
+platform/addons uses Kubernetes/Helm providers and should typically be destroyed from the bastion.
+If you need it, run on the bastion:
+  cd /home/ssm-user/k8s-payflow/terraform/environments/${ENV}/platform/addons
+  terraform init
+  terraform destroy -var-file=terraform.tfvars
+
+EOF
+
 tf_destroy "$PLATFORM_INFRA_DIR"
 if [[ "$SKIP_FOUNDATION" != "true" ]]; then
   tf_destroy "$FOUNDATION_DIR"

@@ -23,26 +23,15 @@ data "terraform_remote_state" "foundation" {
 #   }
 # }
 
-data "terraform_remote_state" "platform" {
-  backend = "s3"
-  config = {
-    bucket         = "payflow-tfstate-003"
-    key            = "dev/platform/terraform.tfstate"
-    region         = var.region
-    dynamodb_table = "payflow-tfstate-lock"
-    encrypt        = true
-  }
-}
-
 module "rds" {
-  source = "../../../modules/rds"
+  source = "../../../../modules/rds"
 
   name_prefix = local.name_prefix
   tags        = local.tags
 
   vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
   subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
-  allowed_sg_ids = [data.terraform_remote_state.platform.outputs.node_security_group_id]
+  allowed_sg_ids = [module.eks.node_security_group_id]
 
   db_name                 = var.rds_db_name
   username                = var.rds_username
@@ -52,27 +41,27 @@ module "rds" {
 }
 
 module "redis" {
-  source = "../../../modules/elasticache"
+  source = "../../../../modules/elasticache"
 
   name_prefix = local.name_prefix
   tags        = local.tags
 
   vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
   subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
-  allowed_sg_ids = [data.terraform_remote_state.platform.outputs.node_security_group_id]
+  allowed_sg_ids = [module.eks.node_security_group_id]
 
   node_type = var.redis_node_type
 }
 
 module "rabbitmq" {
-  source = "../../../modules/amazonmq"
+  source = "../../../../modules/amazonmq"
 
   name_prefix = local.name_prefix
   tags        = local.tags
 
   vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
   subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
-  allowed_sg_ids = [data.terraform_remote_state.platform.outputs.node_security_group_id]
+  allowed_sg_ids = [module.eks.node_security_group_id]
 
   username                   = var.mq_username
   password                   = var.mq_password
@@ -82,7 +71,7 @@ module "rabbitmq" {
 }
 
 module "secrets" {
-  source = "../../../modules/security"
+  source = "../../../../modules/security"
 
   name_prefix = local.name_prefix
   tags        = local.tags

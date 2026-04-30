@@ -82,7 +82,7 @@ In `dev`, application workloads consume managed-service endpoints from AWS Secre
 - Amazon MQ RabbitMQ: `SINGLE_INSTANCE`
 - Secrets Manager: stores DB, MQ, JWT, and optional Slack secrets
 
-This means the Terraform implementation is not yet a highly available data plane. The AWS Account being used does not allow Multi-AZ failovers, but since it Dev Environment it's not a cause for alarm.
+This means the current `dev` Terraform implementation is not yet a highly available data plane (it prioritizes simplicity and cost).
 
 ## Add-ons
 
@@ -115,7 +115,9 @@ The platform add-ons layer deploys:
 1. Engineer authenticates into AWS and reaches the bastion with SSM.
 2. Bastion reaches the private EKS API over Transit Gateway.
 3. Terraform assumes `for-payflow-terraform` for infrastructure changes.
-4. Platform add-ons and workloads are applied after foundation and platform infrastructure are ready.
+4. Foundation + platform/infra are applied from the local machine (AWS-only).
+5. Platform add-ons and Kubernetes workloads are applied from the bastion (Kubernetes/Helm providers against the private EKS API).
+6. Edge (CloudFront/Route 53) is applied last, after the ALB exists.
 
 ## Security Notes
 
@@ -133,6 +135,6 @@ The platform add-ons layer deploys:
 - Network foundation: `terraform/environments/dev/foundation/terraform.tfvars`
 - Platform infra: `terraform/environments/dev/platform/infra/main.tf`
 - Platform vars: `terraform/environments/dev/platform/infra/terraform.tfvars`
-- Workloads: `terraform/environments/dev/workloads/main.tf`
+- Managed services (RDS/Redis/MQ/Secrets): `terraform/environments/dev/platform/infra/aws-managed-databases.tf`
 - Edge: `terraform/environments/dev/edge/main.tf`
 - Diagram source: `diagrams/Payflow-architecture.pdf`

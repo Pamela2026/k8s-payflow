@@ -8,7 +8,6 @@ labels:
 
 resources:
   - ../../k8s
-  - alb-ingress.yaml
   - external-secrets.yaml
 
 images:

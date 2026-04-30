@@ -36,24 +36,38 @@ Dev uses a private-only EKS endpoint, so local-machine `kubectl` access is not t
 
 ### Full Redeploy
 
+Notes:
+
+- Run AWS-only Terraform layers from your local machine.
+- Run `platform/addons` and all `kubectl` / workload deploy steps from the bastion (private EKS API).
+- Apply `edge` last (it depends on the ingress-created ALB existing).
+
+```bash
+cd terraform/environments/dev/foundation
+terraform apply -var-file=terraform.tfvars
+
+cd terraform/environments/dev/platform/infra
+terraform apply -var-file=terraform.tfvars
+```
+
+Then from the bastion:
+
 ```bash
 cd /home/ssm-user/k8s-payflow
 git pull
 
-cd terraform/environments/dev/platform/infra
-terraform apply -var-file=terraform.tfvars
-
 cd ../platform/addons
-terraform apply -var-file=terraform.tfvars
-
-cd ../workloads
 terraform apply -var-file=terraform.tfvars
 
 cd /home/ssm-user/k8s-payflow
 bash k8s/scripts/render-eks-overlay.sh \
   --dns-dir terraform/environments/dev/platform/infra
 bash scripts/deploy-eks-apps.sh
+```
 
+Finally, back on your local machine:
+
+```bash
 cd terraform/environments/dev/edge
 terraform apply -var-file=terraform.tfvars
 ```
@@ -187,13 +201,21 @@ kubectl delete -k /home/ssm-user/k8s-payflow/overlays/dev
 
 ### Destroy Terraform
 
+Notes:
+
+- Delete Kubernetes resources from the bastion first.
+- Destroy `platform/addons` from the bastion (Kubernetes/Helm providers).
+- Destroy AWS-only layers (edge, platform/infra, foundation) from your local machine.
+
 ```bash
-cd /home/ssm-user/k8s-payflow/terraform/environments/dev
-cd edge && terraform destroy -var-file=terraform.tfvars && cd ..
-cd workloads && terraform destroy -var-file=terraform.tfvars && cd ..
-cd platform/addons && terraform destroy -var-file=terraform.tfvars && cd ../..
-cd platform/infra && terraform destroy -var-file=terraform.tfvars && cd ../..
-cd foundation && terraform destroy -var-file=terraform.tfvars
+cd terraform/environments/dev/edge
+terraform destroy -var-file=terraform.tfvars
+
+cd ../platform/infra
+terraform destroy -var-file=terraform.tfvars
+
+cd ../../foundation
+terraform destroy -var-file=terraform.tfvars
 ```
 
 ### Destroy Bootstrap

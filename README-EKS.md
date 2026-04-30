@@ -37,6 +37,7 @@ PayFlow is deployed as a hub-and-spoke AWS layout:
 - Data path: EKS workloads -> RDS / Redis / RabbitMQ / Secrets Manager
 
 For architecture details, see `docs/ARCHITECTURE.md`.
+For GitOps/CI guidance, see `docs/GITOPS.md`.
 
 ## Terraform Layers
 
@@ -46,12 +47,11 @@ For architecture details, see `docs/ARCHITECTURE.md`.
 | Foundation | `terraform/environments/dev/foundation` | Hub/spoke VPCs, subnets, NAT, TGW, bastion, FinOps alerts |
 | Platform Infra | `terraform/environments/dev/platform/infra` | EKS, ECR, WAF, ALB ACM certificate |
 | Platform Addons | `terraform/environments/dev/platform/addons` | ALB controller, External Secrets, observability, autoscaling |
-| Workloads | `terraform/environments/dev/workloads` | RDS, Redis, RabbitMQ, Secrets Manager |
 | Edge | `terraform/environments/dev/edge` | CloudFront and Route 53 records |
 
 ## Required Environment Variables
 
-Set these before applying the workloads layer or running the deployment script:
+Set these before applying `platform/infra` (it now includes managed databases) or running the deployment script:
 
 ```bash
 export TF_VAR_rds_password='<strong-password>'
@@ -66,6 +66,26 @@ export TF_VAR_slack_webhook_url='<https://hooks.slack.com/...>'
 ```
 
 ## Standard Deployment Order
+
+## One-Command Deploy (Optional)
+
+If you want a single command that applies Terraform locally, deploys add-ons and Kubernetes workloads through the bastion (via SSM), and then applies edge last, use:
+
+```bash
+export ENV=dev
+export REGION=us-east-1
+export TF_VAR_rds_password='<strong-password>'
+export TF_VAR_mq_password='<strong-password>'
+export TF_VAR_jwt_secret='<strong-secret>'
+
+# Optional: set explicitly if auto-discovery fails
+export BASTION_INSTANCE_ID='<i-xxxxxxxxxxxxxxxxx>'
+
+# Optional: repo path on the bastion (default shown)
+export BASTION_REPO_DIR='/home/ssm-user/k8s-payflow'
+
+bash scripts/deploy-all.sh
+```
 
 ### 1. Bootstrap
 
@@ -85,9 +105,19 @@ terraform apply -var-file=terraform.tfvars
 
 This creates the hub/spoke network, Transit Gateway, bastion, and FinOps resources.
 
-### 3. Connect to the Bastion with SSM
+### 3. Platform Infrastructure (Local)
 
-The EKS API is private-only, so the remaining infrastructure and app deployment steps should be run from the bastion.
+From your local machine:
+
+```bash
+cd terraform/environments/dev/platform/infra
+terraform init
+terraform apply -var-file=terraform.tfvars
+```
+
+### 4. Connect to the Bastion with SSM
+
+The EKS API is private-only. You can run Terraform AWS-only layers (foundation and platform/infra) from your local machine, but anything that needs Kubernetes/Helm access to the cluster should be run from the bastion (platform add-ons and Kubernetes workloads).
 
 Find the bastion:
 
@@ -105,24 +135,14 @@ INSTANCE_ID=<bastion-instance-id>
 aws ssm start-session --target "$INSTANCE_ID" --region us-east-1
 ```
 
-### 4. Platform Infrastructure
-
-From the bastion:
-
-```bash
-cd /home/ssm-user/k8s-payflow/terraform/environments/dev/platform/infra
-terraform init
-terraform apply -var-file=terraform.tfvars
-```
-
-Then configure `kubectl`:
+### 5. Configure kubectl (Bastion)
 
 ```bash
 bash /home/ssm-user/k8s-payflow/terraform/environments/dev/platform/infra/scripts/kcfg.sh
 kubectl get nodes
 ```
 
-### 5. Platform Addons
+### 6. Platform Addons (Bastion)
 
 ```bash
 cd /home/ssm-user/k8s-payflow/terraform/environments/dev/platform/addons
@@ -131,16 +151,6 @@ terraform apply -var-file=terraform.tfvars
 ```
 
 Deploy the controllers and operators before the application workloads. This ensures the ALB controller, External Secrets, Metrics Server, and autoscaling components exist before the app deployment depends on them.
-
-### 6. Workloads
-
-From the bastion:
-
-```bash
-cd /home/ssm-user/k8s-payflow/terraform/environments/dev/workloads
-terraform init
-terraform apply -var-file=terraform.tfvars
-```
 
 ### 7. Build and Push Images
 
@@ -159,9 +169,9 @@ bash k8s/scripts/render-eks-overlay.sh \
   --dns-dir terraform/environments/dev/platform/infra
 ```
 
-This writes:
+This writes `overlays/dev/alb-ingress.yaml` (legacy approach).
 
-- `overlays/dev/alb-ingress.yaml`
+If you are using GitOps ingress (Argo CD + Helm chart `charts/payflow-ingress`), you should remove `alb-ingress.yaml` from the overlay and do not run this step.
 
 Managed-service endpoints in `dev` come from AWS Secrets Manager through External Secrets and `overlays/dev/aws-managed-services-patch.yaml` rather than Kubernetes `ExternalName` services.
 
@@ -172,14 +182,14 @@ cd /home/ssm-user/k8s-payflow
 bash scripts/deploy-eks-apps.sh
 ```
 
-This step deploys the EKS workloads and ingress resources. It should happen after platform add-ons and after the Terraform-managed services are available.
+This step deploys the EKS workloads and ingress resources. It should happen after platform add-ons and after the Terraform-managed services are available (RDS/Redis/MQ are managed in `platform/infra`).
 
-### 10. Edge
+### 10. Edge (Local, Last)
 
 Run this after the ALB exists:
 
 ```bash
-cd /home/ssm-user/k8s-payflow/terraform/environments/dev/edge
+cd terraform/environments/dev/edge
 terraform init
 terraform apply -var-file=terraform.tfvars
 ```
@@ -216,7 +226,7 @@ Notes:
 
 - Prerequisites installed: AWS CLI, Terraform, Docker, `kubectl`, SSM plugin
 - `TF_VAR_rds_password`, `TF_VAR_mq_password`, `TF_VAR_jwt_secret` set
-- Terraform applies completed in order: foundation, platform infra, platform addons, workloads, edge
+- Terraform applies completed in order: foundation (local), platform infra (local), platform addons (bastion), edge (local last)
 - Bastion SSM access works and `kubectl get nodes` shows Ready nodes
 - Images built and pushed to ECR
 - Application workloads deployed successfully
@@ -235,7 +245,6 @@ kubectl delete -k overlays/dev
 
 cd /home/ssm-user/k8s-payflow/terraform/environments/dev
 cd edge && terraform destroy -var-file=terraform.tfvars && cd ..
-cd workloads && terraform destroy -var-file=terraform.tfvars && cd ..
 cd platform/addons && terraform destroy -var-file=terraform.tfvars && cd ../..
 cd platform/infra && terraform destroy -var-file=terraform.tfvars && cd ../..
 cd foundation && terraform destroy -var-file=terraform.tfvars

@@ -26,18 +26,18 @@ data "terraform_remote_state" "foundation" {
 module "eks" {
   source = "../../../../modules/eks"
 
-  name_prefix    = local.name_prefix
-  tags           = local.tags
-  region         = var.region
-  cluster_name   = var.cluster_name
+  name_prefix     = local.name_prefix
+  tags            = local.tags
+  region          = var.region
+  cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
 
-  vpc_id              = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  private_subnet_ids  = data.terraform_remote_state.foundation.outputs.spoke_private_subnet_ids
-  public_subnet_ids   = data.terraform_remote_state.foundation.outputs.spoke_public_subnet_ids
-  bastion_role_arn    = data.terraform_remote_state.foundation.outputs.bastion_role_arn
-  terraform_user_arn  = var.terraform_user_arn
-  bastion_vpc_cidr    = var.bastion_vpc_cidr
+  vpc_id             = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
+  private_subnet_ids = data.terraform_remote_state.foundation.outputs.spoke_private_subnet_ids
+  public_subnet_ids  = data.terraform_remote_state.foundation.outputs.spoke_public_subnet_ids
+  bastion_role_arn   = data.terraform_remote_state.foundation.outputs.bastion_role_arn
+  terraform_user_arn = var.terraform_user_arn
+  bastion_vpc_cidr   = var.bastion_vpc_cidr
   # Dependency mapping:
   # - vpc_id -> foundation.spoke_vpc_id
   # - private_subnet_ids -> foundation.spoke_private_subnet_ids
@@ -64,9 +64,9 @@ module "ecr" {
 module "waf" {
   source = "../../../../modules/waf"
 
-  enabled     = var.enable_waf
-  name_prefix = local.name_prefix
-  rate_limit  = var.waf_rate_limit
+  enabled                    = var.enable_waf
+  name_prefix                = local.name_prefix
+  rate_limit                 = var.waf_rate_limit
   enable_common_rule_set     = var.waf_enable_common_rule_set
   enable_bad_inputs_rule_set = var.waf_enable_bad_inputs_rule_set
   enable_sqli_rule_set       = var.waf_enable_sqli_rule_set
@@ -75,11 +75,11 @@ module "waf" {
   bad_inputs_rule_priority   = var.waf_bad_inputs_rule_priority
   sqli_rule_priority         = var.waf_sqli_rule_priority
   rate_limit_priority        = var.waf_rate_limit_priority
-  tags        = local.tags
+  tags                       = local.tags
 }
 
 data "aws_route53_zone" "alb_cert" {
-  count  = var.enable_alb_cert && var.hosted_zone_id != null ? 1 : 0
+  count   = var.enable_alb_cert && var.hosted_zone_id != null ? 1 : 0
   zone_id = var.hosted_zone_id
 }
 
