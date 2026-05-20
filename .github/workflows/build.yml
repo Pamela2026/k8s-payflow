@@ -107,17 +107,18 @@ jobs:
           echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
           echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
 
-      - name: Ensure ECR repository exists
+      - name: Verify ECR repository exists
         shell: bash
         run: |
           set -euo pipefail
 
-          aws ecr describe-repositories \
+          if ! aws ecr describe-repositories \
             --repository-names "${{ matrix.repo }}" \
-            >/dev/null 2>&1 \
-          || aws ecr create-repository \
-            --repository-name "${{ matrix.repo }}" \
-            >/dev/null
+            >/dev/null 2>&1; then
+            echo "ECR repository ${{ matrix.repo }} does not exist yet."
+            echo "Run the Terraform platform/infra apply first so Terraform creates the repository."
+            exit 1
+          fi
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3

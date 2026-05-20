@@ -274,15 +274,14 @@ make_build_policy() {
       "Action": "ecr:GetAuthorizationToken",
       "Resource": "*"
     },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ecr:DescribeRepositories",
-        "ecr:CreateRepository",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:InitiateLayerUpload",
-        "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload",
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ecr:DescribeRepositories",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
         "ecr:PutImage"
       ],
       "Resource": "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/payflow-wallet-*"
