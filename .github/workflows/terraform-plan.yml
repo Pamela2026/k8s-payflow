@@ -1,0 +1,181 @@
+name: terraform-plan
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Target environment
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: "1.8.5"
+  TARGET_ENV: ${{ inputs.env || github.event.inputs.env || 'dev' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        layer:
+          - foundation
+          - platform/infra
+          # - edge  # disabled for now; direct ALB access only
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+            **/.terraform
+          key: terraform-plan-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+          role-session-name: tf-plan-${{ github.run_id }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ env.TARGET_ENV }}/${{ matrix.layer }}
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: terraform/environments/${{ env.TARGET_ENV }}/${{ matrix.layer }}
+        run: |
+          set +e
+          terraform plan -input=false -no-color -var-file=terraform.tfvars -out=tfplan 2>&1 | tee plan.log
+          PLAN_EXIT_CODE=${PIPESTATUS[0]}
+          if [ "$PLAN_EXIT_CODE" -eq 0 ] || [ "$PLAN_EXIT_CODE" -eq 2 ]; then
+            terraform show -no-color tfplan > plan.txt
+          else
+            cp plan.log plan.txt
+          fi
+          echo "plan_exit_code=${PLAN_EXIT_CODE}" >> "$GITHUB_OUTPUT"
+
+          if [ "$PLAN_EXIT_CODE" -eq 0 ]; then
+            echo "plan_status=no-changes" >> "$GITHUB_OUTPUT"
+            exit 0
+          elif [ "$PLAN_EXIT_CODE" -eq 2 ]; then
+            echo "plan_status=changes" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "plan_status=failed" >> "$GITHUB_OUTPUT"
+            exit "$PLAN_EXIT_CODE"
+          fi
+
+      - name: Record plan status
+        if: always()
+        shell: bash
+        env:
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.plan_exit_code }}
+          PLAN_STATUS: ${{ steps.plan.outputs.plan_status }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p .status
+          cat > ".status/${{ matrix.layer }}.txt" <<EOF
+          layer=${{ matrix.layer }}
+          target_env=${{ env.TARGET_ENV }}
+          plan_status=${PLAN_STATUS}
+          plan_exit_code=${PLAN_EXIT_CODE}
+          EOF
+
+      - name: Add plan summary
+        if: always()
+        shell: bash
+        env:
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.plan_exit_code }}
+          PLAN_STATUS: ${{ steps.plan.outputs.plan_status }}
+        run: |
+          {
+            echo "## Terraform plan: ${{ matrix.layer }}"
+            echo ""
+            echo "- Environment: ${TARGET_ENV}"
+            echo "- Status: ${PLAN_STATUS}"
+            echo "- Exit code: ${PLAN_EXIT_CODE}"
+            echo "- Plan artifact: tfplan"
+            echo "- Rendered summary: plan.txt"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload plan status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-status-${{ matrix.layer }}
+          path: .status/${{ matrix.layer }}.txt
+          if-no-files-found: error
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.layer }}
+          path: |
+            terraform/environments/${{ env.TARGET_ENV }}/${{ matrix.layer }}/tfplan
+            terraform/environments/${{ env.TARGET_ENV }}/${{ matrix.layer }}/plan.txt
+
+  summarize:
+    runs-on: ubuntu-latest
+    needs: plan
+    if: always()
+    env:
+      TARGET_ENV: ${{ inputs.env || github.event.inputs.env || 'dev' }}
+    steps:
+      - name: Download plan status artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: plan-status-*
+          path: status-artifacts
+          merge-multiple: true
+
+      - name: Write plan summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Terraform Plan Rollup"
+            echo ""
+            echo "- Environment: ${TARGET_ENV}"
+            echo "- Job result: ${{ needs.plan.result }}"
+            echo ""
+            echo "| Layer | Status | Exit code |"
+            echo "|---|---|---|"
+
+            if [ -d status-artifacts ]; then
+              for file in status-artifacts/*.txt; do
+                [ -e "$file" ] || continue
+                layer="$(grep '^layer=' "$file" | cut -d= -f2-)"
+                plan_status="$(grep '^plan_status=' "$file" | cut -d= -f2-)"
+                plan_exit_code="$(grep '^plan_exit_code=' "$file" | cut -d= -f2-)"
+                echo "| ${layer} | ${plan_status} | ${plan_exit_code} |"
+              done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

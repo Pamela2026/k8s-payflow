@@ -1,0 +1,32 @@
+env: prod
+namespace: payflow
+
+httpOnly: true
+
+domains:
+  app: computehub.online
+  api: api.computehub.online
+
+# Keep these values in git for GitOps. They should match Terraform-managed resources.
+# - certificateArn: ACM certificate ARN used by the ALB listener if HTTPS is enabled.
+aws:
+  scheme: internet-facing
+  targetType: ip
+  certificateArn: ""
+  wafAclArn: ""
+  securityGroups: ""
+  healthcheckPath: /health
+  cors:
+    allowOrigin: "https://computehub.online"
+    allowMethods: "GET, PUT, POST, DELETE, OPTIONS"
+    allowHeaders: "keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,custom-header-1,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,authorization"
+    allowCredentials: "true"
+  extraAnnotations: {}
+
+services:
+  frontend:
+    name: frontend
+    port: 80
+  apiGateway:
+    name: api-gateway
+    port: 80

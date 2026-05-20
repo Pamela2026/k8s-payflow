@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: payflow-dev-ingress
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Pamela2026/k8s-payflow.git
+    targetRevision: main
+    path: charts/payflow-ingress
+    helm:
+      releaseName: payflow-ingress
+      valueFiles:
+      - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: payflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

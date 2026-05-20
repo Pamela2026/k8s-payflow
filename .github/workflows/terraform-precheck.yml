@@ -1,0 +1,101 @@
+name: terraform-precheck
+
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - "charts/**"
+      - ".github/workflows/terraform-precheck.yml"
+      - ".github/workflows/terraform-cicd.yml"
+
+  push:
+    branches:
+      - main
+      - test
+    paths:
+      - "terraform/**"
+      - "charts/**"
+      - ".github/workflows/terraform-precheck.yml"
+      - ".github/workflows/terraform-cicd.yml"
+
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Target environment
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.8.5"
+  TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.env || 'dev' }}
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+  validate:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        layer:
+          - foundation
+          - platform/infra
+          # - edge  # disabled for now; direct ALB access only
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+            **/.terraform
+          key: tf-precheck-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init (backend disabled)
+        working-directory: terraform/environments/${{ env.TARGET_ENV }}/${{ matrix.layer }}
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/${{ env.TARGET_ENV }}/${{ matrix.layer }}
+        run: terraform validate
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      - name: Helm lint ingress chart
+        run: helm lint charts/payflow-ingress -f charts/payflow-ingress/values-${{ env.TARGET_ENV }}.yaml

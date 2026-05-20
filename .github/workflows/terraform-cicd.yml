@@ -1,0 +1,432 @@
+﻿name: terraform-cicd
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Target environment
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+  workflow_call:
+    inputs:
+      env:
+        description: Target environment
+        required: true
+        type: string
+
+  push:
+    branches:
+      - main
+      - test
+    paths:
+      - 'terraform/**'
+      - 'charts/**'
+      - 'overlays/**'
+      - '.github/workflows/terraform-cicd.yml'
+
+concurrency:
+  group: terraform-cicd-${{ inputs.env || github.event.inputs.env || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: "1.8.5"
+  TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
+  BASTION_REPO_DIR_DEFAULT: /home/ssm-user/k8s-payflow
+
+jobs:
+  policy_summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Render contract policy summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/pipeline-contracts.py >> "$GITHUB_STEP_SUMMARY"
+  precheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: policy_summary
+
+    strategy:
+      fail-fast: false
+      matrix:
+        layer:
+          - foundation
+          - platform/infra
+          # - edge  # disabled for now; direct ALB access only
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Terraform plugin cache dir
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/${{ matrix.layer }}
+        run: |
+          set -euo pipefail
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform validate
+
+  helm_lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      - name: Helm lint ingress chart
+        run: |
+          set -euo pipefail
+          helm lint charts/payflow-ingress \
+            -f charts/payflow-ingress/values-${{ inputs.env || github.event.inputs.env || 'dev' }}.yaml
+
+  discover_bastion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    needs:
+      - precheck
+      - helm_lint
+
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-verify
+
+    outputs:
+      bastion_instance_id: ${{ steps.bastion.outputs.bastion_instance_id }}
+
+    steps:
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Discover Bastion Instance Id
+        id: bastion
+        env:
+          TARGET_ENV: ${{ inputs.env || github.event.inputs.env || 'dev' }}
+        run: |
+          set -euo pipefail
+
+          BASTION_INSTANCE_ID="$(aws ec2 describe-instances \
+            --region "${AWS_REGION}" \
+            --filters \
+              "Name=tag:Name,Values=*-${TARGET_ENV}-bastion" \
+              "Name=instance-state-name,Values=running" \
+            --query 'Reservations[0].Instances[0].InstanceId' \
+            --output text)"
+
+          if [ -z "${BASTION_INSTANCE_ID}" ] || [ "${BASTION_INSTANCE_ID}" = "None" ]; then
+            echo "Bastion instance not found"
+            exit 1
+          fi
+
+          echo "bastion_instance_id=${BASTION_INSTANCE_ID}" >> "$GITHUB_OUTPUT"
+
+  plan_foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    needs: discover_bastion
+
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-foundation-plan
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Terraform plugin cache dir
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
+        run: |
+          set -euo pipefail
+          terraform init -input=false -lockfile=readonly
+
+      - name: Terraform Plan
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
+        run: |
+          set -euo pipefail
+
+          terraform plan \
+            -input=false \
+            -detailed-exitcode \
+            -no-color \
+            -out=tfplan \
+            -var-file=terraform.tfvars
+
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Upload foundation plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-plan
+          path: |
+            terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation/tfplan
+            terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation/plan.txt
+
+  apply_foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    needs: plan_foundation
+
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-foundation-apply
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Terraform plugin cache dir
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: foundation-plan
+          path: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
+        run: |
+          set -euo pipefail
+          terraform apply -input=false -auto-approve tfplan
+
+  plan_platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    needs: apply_foundation
+
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-plan
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Terraform plugin cache dir
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
+        run: |
+          set -euo pipefail
+          terraform init -input=false -lockfile=readonly
+
+      - name: Terraform Plan
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
+        run: |
+          set -euo pipefail
+
+          terraform plan \
+            -input=false \
+            -detailed-exitcode \
+            -no-color \
+            -out=tfplan \
+            -var-file=terraform.tfvars
+
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Upload platform plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-plan
+          path: |
+            terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra/tfplan
+            terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra/plan.txt
+
+  apply_platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    needs: plan_platform
+
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-apply
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Terraform plugin cache dir
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download platform plan
+        uses: actions/download-artifact@v4
+        with:
+          name: platform-plan
+          path: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
+        run: |
+          set -euo pipefail
+          terraform apply -input=false -auto-approve tfplan
+
+  health_platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    needs:
+      - apply_platform
+      - discover_bastion
+
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-verify
+
+    steps:
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify EKS Cluster
+        env:
+          TARGET_ENV: ${{ inputs.env || github.event.inputs.env || 'dev' }}
+          CLUSTER_NAME: ${{ vars.CLUSTER_NAME }}
+        run: |
+          set -euo pipefail
+
+          CLUSTER_NAME="${CLUSTER_NAME:-payflow-eks-${TARGET_ENV}}"
+
+          STATUS="$(aws eks describe-cluster \
+            --name "${CLUSTER_NAME}" \
+            --region "${AWS_REGION}" \
+            --query 'cluster.status' \
+            --output text)"
+
+          [ "${STATUS}" = "ACTIVE" ]
+
+      - name: Verify Cluster Access From Bastion
+        env:
+          TARGET_ENV: ${{ inputs.env || github.event.inputs.env || 'dev' }}
+          GITHUB_SHA: ${{ github.sha }}
+          BASTION_INSTANCE_ID: ${{ needs.discover_bastion.outputs.bastion_instance_id }}
+        run: |
+          set -euo pipefail
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${BASTION_INSTANCE_ID}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands='[
+              "set -euo pipefail",
+              "cd /home/ssm-user/k8s-payflow",
+              "git fetch --all --tags",
+              "git checkout '"${GITHUB_SHA}"'",
+              "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
+              "kubectl wait --for=condition=Ready nodes --all --timeout=5m"
+            ]' \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id "${COMMAND_ID}" \
+            --instance-id "${BASTION_INSTANCE_ID}"

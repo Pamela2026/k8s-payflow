@@ -1,0 +1,163 @@
+name: payflow-wallet-ci
+
+on:
+  pull_request:
+    paths:
+      - "payflow-wallet/**"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/build.yml"
+  push:
+    branches:
+      - main
+      - test
+    paths:
+      - "payflow-wallet/**"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/build.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  secret_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: payflow-wallet
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          scanners: vuln,secret,misconfig
+
+  service_quality:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: auth-service
+            workdir: payflow-wallet/services/auth-service
+            quality_cmd: npm run lint
+            test_cmd: npm test -- --runInBand --passWithNoTests
+          - name: api-gateway
+            workdir: payflow-wallet/services/api-gateway
+            quality_cmd: npm run lint
+            test_cmd: npm test -- --runInBand --passWithNoTests
+          - name: wallet-service
+            workdir: payflow-wallet/services/wallet-service
+            quality_cmd: npm run lint
+            test_cmd: npm test -- --runInBand --passWithNoTests
+          - name: transaction-service
+            workdir: payflow-wallet/services/transaction-service
+            quality_cmd: npm run lint
+            test_cmd: npm test -- --runInBand --passWithNoTests
+          - name: notification-service
+            workdir: payflow-wallet/services/notification-service
+            quality_cmd: npm run lint
+            test_cmd: npm test -- --runInBand --passWithNoTests
+          - name: frontend
+            workdir: payflow-wallet/services/frontend
+            quality_cmd: npm run build
+            test_cmd: CI=true npm test -- --watchAll=false --passWithNoTests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: ${{ matrix.workdir }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.workdir }}
+        run: npm ci
+
+      - name: Dependency audit
+        working-directory: ${{ matrix.workdir }}
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Quality gate
+        id: quality
+        working-directory: ${{ matrix.workdir }}
+        run: ${{ matrix.quality_cmd }}
+
+      - name: Tests
+        id: tests
+        working-directory: ${{ matrix.workdir }}
+        run: ${{ matrix.test_cmd }}
+
+      - name: Record service status
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          QUALITY_OUTCOME: ${{ steps.quality.outcome }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p .status
+          cat > ".status/${{ matrix.name }}.txt" <<EOF
+          service=${{ matrix.name }}
+          workdir=${{ matrix.workdir }}
+          job_status=${JOB_STATUS}
+          quality_outcome=${QUALITY_OUTCOME}
+          test_outcome=${TEST_OUTCOME}
+          EOF
+
+      - name: Upload service status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-status-${{ matrix.name }}
+          path: .status/${{ matrix.name }}.txt
+          if-no-files-found: error
+
+  summarize:
+    runs-on: ubuntu-latest
+    needs: service_quality
+    if: always()
+    steps:
+      - name: Download service status artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ci-status-*
+          path: status-artifacts
+          merge-multiple: true
+
+      - name: Write CI summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Wallet CI Summary"
+            echo ""
+            echo "- Job result: ${{ needs.service_quality.result }}"
+            echo ""
+            echo "| Service | Job | Lint/Build | Tests |"
+            echo "|---|---|---|---|"
+
+            if [ -d status-artifacts ]; then
+              for file in status-artifacts/*.txt; do
+                [ -e "$file" ] || continue
+                service="$(grep '^service=' "$file" | cut -d= -f2-)"
+                job_status="$(grep '^job_status=' "$file" | cut -d= -f2-)"
+                quality_outcome="$(grep '^quality_outcome=' "$file" | cut -d= -f2-)"
+                test_outcome="$(grep '^test_outcome=' "$file" | cut -d= -f2-)"
+                echo "| ${service} | ${job_status} | ${quality_outcome} | ${test_outcome} |"
+              done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,38 @@
+# Default values for payflow-ingress.
+# Environment overrides should live in git (e.g., charts/payflow-ingress/values-dev.yaml).
+
+env: dev
+namespace: payflow
+
+httpOnly: false
+
+domains:
+  app: computehub.online
+  api: api.computehub.online
+
+aws:
+  scheme: internet-facing
+  targetType: ip
+  certificateArn: ""
+  wafAclArn: ""
+  securityGroups: ""
+  healthcheckPath: /health
+  cors:
+    allowOrigin: ""
+    allowMethods: "GET, PUT, POST, DELETE, OPTIONS"
+    allowHeaders: "keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,custom-header-1,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,authorization"
+    allowCredentials: "true"
+
+  # Any additional ALB controller annotations you want to set.
+  # Example:
+  # extraAnnotations:
+  #   alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=120
+  extraAnnotations: {}
+
+services:
+  frontend:
+    name: frontend
+    port: 80
+  apiGateway:
+    name: api-gateway
+    port: 80

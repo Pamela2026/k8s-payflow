@@ -1,0 +1,105 @@
+name: sync-ingress-values
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment to sync values for'
+        required: true
+        type: choice
+        options:
+        - dev
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}-sync-ingress
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        aws-region: us-east-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.8.5'
+
+    - name: Install jq + yq
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+
+    - name: Read platform/infra outputs and update Helm values
+      env:
+        ENV: ${{ inputs.env }}
+      run: |
+        set -euo pipefail
+
+        TF_DIR="terraform/environments/${ENV}/platform/infra"
+        VALUES_FILE="charts/payflow-ingress/values-${ENV}.yaml"
+        HTTP_ONLY="$(yq '.httpOnly' "$VALUES_FILE")"
+
+        terraform -chdir="$TF_DIR" init -input=false
+        OUT="$(terraform -chdir="$TF_DIR" output -json)"
+
+        ALB_SG_IDS="$(echo "$OUT" | jq -r '.alb_origin_security_group_id.value // empty')"
+
+        if [ "$HTTP_ONLY" = "true" ]; then
+          echo "Ingress chart is in httpOnly mode; leaving domain and certificate values unchanged."
+        else
+          APP_DOMAIN="$(echo "$OUT" | jq -r '.app_domain.value // .root_domain.value // empty')"
+          API_DOMAIN="$(echo "$OUT" | jq -r '.api_domain.value // empty')"
+          CERT_ARN="$(echo "$OUT" | jq -r '.alb_certificate_arn.value // .acm_certificate_arn.value // .alb_acm_certificate_arn.value // empty')"
+
+          if [ -z "$CERT_ARN" ]; then
+            echo "Could not find ALB certificate ARN in terraform outputs (expected alb_certificate_arn/acm_certificate_arn/alb_acm_certificate_arn)." >&2
+            exit 1
+          fi
+          if [ -z "$APP_DOMAIN" ]; then
+            echo "Could not find app domain in terraform outputs (expected app_domain/root_domain)." >&2
+            exit 1
+          fi
+          if [ -z "$API_DOMAIN" ]; then
+            API_DOMAIN="api.${APP_DOMAIN}"
+          fi
+
+          yq -i ".domains.app = \"${APP_DOMAIN}\"" "$VALUES_FILE"
+          yq -i ".domains.api = \"${API_DOMAIN}\"" "$VALUES_FILE"
+          yq -i ".aws.certificateArn = \"${CERT_ARN}\"" "$VALUES_FILE"
+        fi
+
+        if [ -n "$ALB_SG_IDS" ]; then
+          yq -i ".aws.securityGroups = \"${ALB_SG_IDS}\"" "$VALUES_FILE"
+        else
+          yq -i ".aws.securityGroups = \"\"" "$VALUES_FILE"
+        fi
+
+        echo "Updated $VALUES_FILE"
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        commit-message: "chore(gitops): sync ingress values (${{ inputs.env }})"
+        title: "Sync ingress Helm values from Terraform outputs (${{ inputs.env }})"
+        body: |
+          This PR updates `charts/payflow-ingress/values-${{ inputs.env }}.yaml` from
+          Terraform outputs in `terraform/environments/${{ inputs.env }}/platform/infra`.
+
+          Intended flow:
+          1) Apply `platform/infra`
+          2) Run this workflow to sync values into Git (audit trail)
+          3) Argo CD reconciles the updated ingress
+        branch: "chore/sync-ingress-values-${{ inputs.env }}"
+        delete-branch: true

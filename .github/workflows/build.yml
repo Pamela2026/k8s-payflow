@@ -1,0 +1,396 @@
+name: payflow-wallet-build
+
+on:
+  push:
+    branches:
+      - main
+      - test
+    paths:
+      - "payflow-wallet/**"
+      - ".github/workflows/build.yml"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: Target overlay environment
+        required: true
+        type: choice
+        default: dev
+        options:
+          - dev
+          - prod
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  IMAGE_TAG: ${{ github.sha }}
+  TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    environment: build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: auth-service
+            repo: payflow-wallet-auth-service
+            context: payflow-wallet/services/auth-service
+            dockerfile: Dockerfile
+
+          - name: api-gateway
+            repo: payflow-wallet-api-gateway
+            context: payflow-wallet/services
+            dockerfile: api-gateway/Dockerfile
+
+          - name: wallet-service
+            repo: payflow-wallet-wallet-service
+            context: payflow-wallet/services
+            dockerfile: wallet-service/Dockerfile
+
+          - name: transaction-service
+            repo: payflow-wallet-transaction-service
+            context: payflow-wallet/services
+            dockerfile: transaction-service/Dockerfile
+
+          - name: notification-service
+            repo: payflow-wallet-notification-service
+            context: payflow-wallet/services
+            dockerfile: notification-service/Dockerfile
+
+          - name: frontend
+            repo: payflow-wallet-frontend
+            context: payflow-wallet/services/frontend
+            dockerfile: Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+          role-session-name: github-${{ github.run_id }}
+
+          role-session-tags: |
+            Repo=${{ github.repository }}
+            Workflow=${{ github.workflow }}
+            Actor=${{ github.actor }}
+            Branch=${{ github.ref_name }}
+            Commit=${{ github.sha }}
+            Job=build
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Resolve account and registry
+        id: registry
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          IMAGE_URI="${ECR_REGISTRY}/${{ matrix.repo }}:${IMAGE_TAG}"
+
+          echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
+          echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure ECR repository exists
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          aws ecr describe-repositories \
+            --repository-names "${{ matrix.repo }}" \
+            >/dev/null 2>&1 \
+          || aws ecr create-repository \
+            --repository-name "${{ matrix.repo }}" \
+            >/dev/null
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: ${{ matrix.name }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan built image
+        id: trivy_scan
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: ${{ env.TARGET_ENV != 'prod' }}
+        with:
+          image-ref: ${{ matrix.name }}:${{ env.IMAGE_TAG }}
+          cache-dir: /tmp/trivy-cache
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Tag and push SHA image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker tag \
+            "${{ matrix.name }}:${IMAGE_TAG}" \
+            "${{ steps.registry.outputs.image_uri }}"
+
+          docker push "${{ steps.registry.outputs.image_uri }}"
+
+      - name: Tag and push latest on main
+        if: github.ref_name == 'main'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker tag \
+            "${{ matrix.name }}:${IMAGE_TAG}" \
+            "${{ steps.registry.outputs.registry }}/${{ matrix.repo }}:latest"
+
+          docker push \
+            "${{ steps.registry.outputs.registry }}/${{ matrix.repo }}:latest"
+
+      - name: Record matrix status
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          SCAN_OUTCOME: ${{ steps.trivy_scan.outcome }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p .status
+          cat > ".status/${{ matrix.name }}.txt" <<EOF
+          service=${{ matrix.name }}
+          repo=${{ matrix.repo }}
+          target_env=${TARGET_ENV}
+          job_status=${JOB_STATUS}
+          scan_outcome=${SCAN_OUTCOME}
+          EOF
+
+      - name: Upload matrix status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-status-${{ matrix.name }}
+          path: .status/${{ matrix.name }}.txt
+          if-no-files-found: error
+
+  sync_overlay_image_tags:
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    environment: build
+
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    concurrency:
+      group: overlay-${{ github.ref_name }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+          role-session-name: github-${{ github.run_id }}-sync
+
+          role-session-tags: |
+            Repo=${{ github.repository }}
+            Workflow=${{ github.workflow }}
+            Actor=${{ github.actor }}
+            Branch=${{ github.ref_name }}
+            Commit=${{ github.sha }}
+            Job=gitops-sync
+
+      - name: Install yq
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Determine target environment
+        id: env
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TARGET_ENV="${{ inputs.target_env }}"
+          elif [ "${GITHUB_REF_NAME}" = "main" ]; then
+            TARGET_ENV="prod"
+          else
+            TARGET_ENV="dev"
+          fi
+
+          echo "target_env=${TARGET_ENV}" >> "$GITHUB_OUTPUT"
+
+      - name: Sync overlay image tags to commit SHA
+        env:
+          SHA_TAG: ${{ github.sha }}
+          TARGET_ENV: ${{ steps.env.outputs.target_env }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          ECR_PREFIX="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+          OVERLAY_FILE="overlays/${TARGET_ENV}/kustomization.yaml"
+
+          if [ ! -f "${OVERLAY_FILE}" ]; then
+            echo "Overlay file not found: ${OVERLAY_FILE}"
+            exit 1
+          fi
+
+          IMAGES=(
+            payflow-wallet-api-gateway
+            payflow-wallet-auth-service
+            payflow-wallet-frontend
+            payflow-wallet-notification-service
+            payflow-wallet-transaction-service
+            payflow-wallet-wallet-service
+          )
+
+          for image in "${IMAGES[@]}"; do
+            yq -i \
+              "(.images[] | select(.name == \"${ECR_PREFIX}/${image}\") | .newTag) = strenv(SHA_TAG)" \
+              "${OVERLAY_FILE}"
+          done
+
+          if git diff --quiet -- "${OVERLAY_FILE}"; then
+            echo "No overlay tag changes to commit."
+            exit 0
+          fi
+
+          BRANCH="gitops/sync-${SHA_TAG}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "${BRANCH}"
+
+          git add "${OVERLAY_FILE}"
+
+          git commit \
+            -m "chore(gitops): sync wallet image tags (${SHA_TAG})"
+
+          git push origin "${BRANCH}"
+
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA_TAG: ${{ github.sha }}
+          TARGET_ENV: ${{ steps.env.outputs.target_env }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BRANCH="gitops/sync-${SHA_TAG}"
+
+          gh pr create \
+            --title "chore(gitops): sync wallet image tags (${SHA_TAG})" \
+            --body "
+          Automated sync of wallet service image tags.
+
+          Environment: ${TARGET_ENV}
+          Commit SHA: ${SHA_TAG}
+          " \
+            --base "${GITHUB_REF_NAME}" \
+            --head "${BRANCH}" \
+          || echo "Pull request already exists"
+
+  summarize_build:
+    runs-on: ubuntu-latest
+    needs:
+      - build_and_push
+      - sync_overlay_image_tags
+    if: always()
+    env:
+      TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Render contract policy summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/pipeline-contracts.py >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download matrix status artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-status-*
+          path: status-artifacts
+          merge-multiple: true
+
+      - name: Write build summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Wallet Build Summary"
+            echo ""
+            echo "- Target environment: ${TARGET_ENV}"
+            echo "- Build job result: ${{ needs.build_and_push.result }}"
+            echo "- Overlay sync result: ${{ needs.sync_overlay_image_tags.result }}"
+            echo ""
+            echo "| Service | Job | Scan | Repo |"
+            echo "|---|---|---|---|"
+
+            if [ -d status-artifacts ]; then
+              for file in status-artifacts/*.txt; do
+                [ -e "$file" ] || continue
+                service="$(grep '^service=' "$file" | cut -d= -f2-)"
+                job_status="$(grep '^job_status=' "$file" | cut -d= -f2-)"
+                scan_outcome="$(grep '^scan_outcome=' "$file" | cut -d= -f2-)"
+                repo="$(grep '^repo=' "$file" | cut -d= -f2-)"
+                echo "| ${service} | ${job_status} | ${scan_outcome} | ${repo} |"
+              done
+            else
+              echo "| n/a | n/a | n/a | n/a |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

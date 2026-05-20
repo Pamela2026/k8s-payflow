@@ -1,0 +1,87 @@
+version: 1
+
+policy:
+  mode: contract-aware
+  prod_requires_manual_approval: true
+  rollback_requires_manual_approval: true
+  reapply_only_if_consumed_outputs_changed: true
+
+layers:
+  foundation:
+    contract_outputs:
+      - spoke_vpc_id
+      - spoke_private_subnet_ids
+      - spoke_public_subnet_ids
+      - bastion_role_arn
+    consumers:
+      - platform/infra
+      - platform/addons
+    on_contract_change:
+      replan:
+        - platform/infra
+      reverify:
+        - platform/addons
+    prod_approval_required_for:
+      - apply
+      - rollback
+
+  platform/infra:
+    contract_outputs:
+      - cluster_name
+      - cluster_endpoint
+      - alb_certificate_arn
+      - alb_origin_security_group_id
+      - app_domain
+      - api_domain
+      - rds_endpoint
+      - redis_primary_endpoint
+      - rabbitmq_endpoint
+      - db_secret_arn
+      - mq_secret_arn
+      - jwt_secret_arn
+      - slack_webhook_secret_arn
+    consumers:
+      - overlays/dev
+      - overlays/prod
+      - edge
+      - sync-ingress-values
+      - platform/addons
+    on_contract_change:
+      replan:
+        - edge
+      resync:
+        - sync-ingress-values
+        - overlays/dev
+        - overlays/prod
+      reverify:
+        - platform/addons
+    prod_approval_required_for:
+      - apply
+      - rollback
+      - resync
+
+  edge:
+    contract_outputs:
+      - cloudfront_distribution_domain_name
+      - waf_web_acl_arn
+    consumers: []
+    on_contract_change:
+      reverify: []
+    prod_approval_required_for:
+      - apply
+      - rollback
+
+workflows:
+  terraform-cicd:
+    reads_policy: true
+    uses_outputs_for:
+      - downstream replan decisions
+      - downstream resync decisions
+      - prod approval gating
+
+  build:
+    reads_policy: true
+    uses_outputs_for:
+      - overlay target selection
+      - image tag sync target selection
+
