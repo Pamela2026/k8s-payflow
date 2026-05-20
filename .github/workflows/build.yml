@@ -136,7 +136,7 @@ jobs:
 
       - name: Scan built image
         id: trivy_scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: ${{ env.TARGET_ENV != 'prod' }}
         with:
           image-ref: ${{ matrix.name }}:${{ env.IMAGE_TAG }}
