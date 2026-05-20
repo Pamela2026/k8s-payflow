@@ -11,7 +11,8 @@ PayFlow is deployed as a hub-and-spoke AWS layout:
 - Hub VPC: `10.0.0.0/16`
 - Spoke VPC: `10.1.0.0/16`
 - Connectivity: AWS Transit Gateway
-- Edge path: Route 53 -> CloudFront -> ALB -> EKS workloads
+- Active user path: public ALB -> EKS workloads
+- Edge path (commented config): Route 53 -> CloudFront -> ALB -> EKS workloads
 - Control path: engineer -> SSM -> bastion -> private EKS API / Terraform assume-role
 
 For comparison, see `diagrams/Payflow-architecture.pdf`
@@ -60,16 +61,13 @@ For comparison, see `diagrams/Payflow-architecture.pdf`
 
 ### Edge and Ingress
 
-- Route 53 hosts `computehub.online`
-- CloudFront is enabled and fronts the public ALB DNS name
-- CloudFront has its own ACM certificate in `us-east-1`
-- The ALB certificate is provisioned separately in the platform layer
-- CloudFront forwards the viewer `Host` header to the ALB origin
-- CloudFront is configured to talk to the ALB origin over HTTPS
-- WAF is created in Terraform and attached to the ALB ingress via the `alb.ingress.kubernetes.io/wafv2-acl-arn` annotation
-- The ALB is internet-facing and spans the spoke public subnets
+- The current setup does not deploy the public edge layer.
+- The app is reached directly through the public ALB DNS name.
+- Route 53 / CloudFront / edge ACM wiring is kept in the repo as commented configuration, re-enable if you have a domain.
+- The ALB is internet-facing and spans the spoke public subnets.
+- Ingress is managed by Helm/GitOps, not by Terraform-rendered manifest generation.
 
-## Workloads Layer
+## Kubernetes Workloads Layer
 
 Managed services are deployed into the spoke data private subnets and allow inbound traffic only from the EKS node security group.
 
@@ -103,21 +101,19 @@ The platform add-ons layer deploys:
 
 ### User traffic
 
-1. User resolves `computehub.online` in Route 53.
-2. Route 53 aliases the domain to CloudFront.
-3. CloudFront forwards requests to the ALB origin over HTTPS.
-4. The ALB applies WAF and ingress rules and routes `/` to `frontend` and `/api` to `api-gateway`.
-5. The ALB targets workload IPs in EKS.
-6. Workloads in EKS access RDS, Redis, RabbitMQ, and Secrets Manager inside the spoke VPC.
+1. User resolves the public ALB DNS name directly.
+2. The ALB applies ingress rules and routes `/` to `frontend` and `/api` to `api-gateway`.
+3. The ALB targets workload IPs in EKS.
+4. Workloads in EKS access RDS, Redis, RabbitMQ, and Secrets Manager inside the spoke VPC.
 
 ### Operator and deploy traffic
 
 1. Engineer authenticates into AWS and reaches the bastion with SSM.
 2. Bastion reaches the private EKS API over Transit Gateway.
-3. Terraform assumes `for-payflow-terraform` for infrastructure changes.
-4. Foundation + platform/infra are applied from the local machine (AWS-only).
-5. Platform add-ons and Kubernetes workloads are applied from the bastion (Kubernetes/Helm providers against the private EKS API).
-6. Edge (CloudFront/Route 53) is applied last, after the ALB exists.
+3. Terraform assumes the environment-specific GitHub OIDC role for infrastructure changes.
+4. Foundation and platform/infra are applied through GitHub Actions with environment-gated AWS roles.
+5. Platform add-ons are verified through the bastion/SSM path when needed for private EKS access.
+6. Kubernetes workloads are reconciled from Git using GitOps rather than pushed imperatively from a local deploy script.
 
 ## Security Notes
 
@@ -125,10 +121,9 @@ The platform add-ons layer deploys:
 - Bastion is SSM-based
 - Managed services are not publicly accessible
 - ALB is internet-facing
-- CloudFront is public edge entry
-- WAF is regional on the ALB path
-- CloudFront to ALB origin traffic is HTTPS
+- The public ALB is the entry point
 - Secrets are injected from AWS Secrets Manager rather than committed in manifests
+- Local deployment helpers are intentionally limited to bootstrap and teardown; the archived imperative scripts are no longer the active path.
 
 ## Canonical Files
 
@@ -136,5 +131,5 @@ The platform add-ons layer deploys:
 - Platform infra: `terraform/environments/dev/platform/infra/main.tf`
 - Platform vars: `terraform/environments/dev/platform/infra/terraform.tfvars`
 - Managed services (RDS/Redis/MQ/Secrets): `terraform/environments/dev/platform/infra/aws-managed-databases.tf`
-- Edge: `terraform/environments/dev/edge/main.tf`
+- Edge: `terraform/environments/dev/edge/main.tf` (commented future config)
 - Diagram source: `diagrams/Payflow-architecture.pdf`
