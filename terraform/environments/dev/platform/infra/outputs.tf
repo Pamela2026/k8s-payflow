@@ -43,25 +43,28 @@ output "ecr_repository_urls" {
   value       = module.ecr.repository_urls
 }
 
-output "waf_web_acl_arn" {
-  description = "WAFv2 Web ACL ARN for the ALB (regional)."
-  value       = module.waf.web_acl_arn
-}
-
-output "alb_certificate_arn" {
-  description = "ACM certificate ARN for the ALB."
-  value       = var.enable_alb_cert && var.alb_cert_domain != null ? aws_acm_certificate.alb[0].arn : null
-}
-
-output "alb_acm_certificate_arn" {
-  description = "Alias for alb_certificate_arn (used by overlay render scripts)."
-  value       = try(aws_acm_certificate.alb[0].arn, null)
-}
-
-output "acm_certificate_arn" {
-  description = "Alias for alb_certificate_arn (used by overlay render scripts)."
-  value       = try(aws_acm_certificate.alb[0].arn, null)
-}
+# Edge / Route 53 outputs are intentionally disabled in the current setup.
+# Re-enable if you own a domain.
+#
+# output "alb_certificate_arn" {
+#   description = "ACM certificate ARN for the ALB."
+#   value       = module.route53.alb_certificate_arn
+# }
+#
+# output "alb_acm_certificate_arn" {
+#   description = "Alias for alb_certificate_arn (used by overlay render scripts)."
+#   value       = module.route53.alb_acm_certificate_arn
+# }
+#
+# output "acm_certificate_arn" {
+#   description = "Alias for alb_certificate_arn (used by overlay render scripts)."
+#   value       = module.route53.acm_certificate_arn
+# }
+#
+# output "alb_origin_security_group_id" {
+#   description = "Security group ID that allows CloudFront origin-facing traffic to the ALB."
+#   value       = module.route53.alb_origin_security_group_id
+# }
 
 output "app_domain" {
   description = "Primary application domain used in the ALB ingress host rules."

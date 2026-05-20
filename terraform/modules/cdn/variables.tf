@@ -31,7 +31,7 @@ variable "comment" {
 variable "origin_protocol_policy" {
   description = "Origin protocol policy for CloudFront to ALB communication."
   type        = string
-  default     = "https-only"
+  default     = "http-only"
 }
 
 variable "origin_ssl_protocols" {
@@ -74,6 +74,12 @@ variable "price_class" {
   description = "CloudFront price class."
   type        = string
   default     = "PriceClass_100"
+}
+
+variable "web_acl_id" {
+  description = "The ID of the WAF Web ACL to associate with the CloudFront distribution."
+  type        = string
+  default     = null
 }
 
 variable "tags" {

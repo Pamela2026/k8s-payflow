@@ -24,16 +24,11 @@ ecr_repositories = [
   "payflow-wallet-wallet-service"
 ]
 
-enable_waf                     = true
-waf_rate_limit                 = 2000
-waf_enable_common_rule_set     = true
-waf_enable_bad_inputs_rule_set = true
-waf_enable_sqli_rule_set       = true
-waf_enable_rate_limit          = true
-
-enable_alb_cert = true
-alb_cert_domain = "computehub.online"
-hosted_zone_id  = "Z02373822JO7MP3G5ZLH"
+# Edge / Route 53 are disabled for now.
+# Activate these if you own a domain.
+# enable_alb_cert = true
+# alb_cert_domain = "computehub.online"
+# hosted_zone_id  = "Z02373822JO7MP3G5ZLH"
 
 # RDS
 rds_db_name  = "payflow"

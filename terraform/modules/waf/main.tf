@@ -1,8 +1,8 @@
 resource "aws_wafv2_web_acl" "this" {
   count = var.enabled ? 1 : 0
 
-  name  = "${var.name_prefix}-alb-waf"
-  scope = "REGIONAL"
+  name  = "${var.name_prefix}-waf"
+  scope = var.scope
 
   default_action {
     allow {}

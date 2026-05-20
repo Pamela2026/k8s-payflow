@@ -87,7 +87,8 @@ resource "aws_cloudfront_distribution" "app" {
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  tags = var.tags
+  tags       = var.tags
+  web_acl_id = var.web_acl_id
 }
 
 resource "aws_route53_record" "app_alias" {

@@ -68,3 +68,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "scope" {
+  description = "Scope of the WAF (REGIONAL or CLOUDFRONT)."
+  type        = string
+  default     = "CLOUDFRONT"
+}

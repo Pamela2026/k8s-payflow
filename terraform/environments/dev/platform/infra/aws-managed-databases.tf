@@ -4,7 +4,7 @@
 # #### Managed services in data private subnets. ####
 # #### Depends on foundation and platform outputs. ####
 
-data "terraform_remote_state" "foundation" {
+data "terraform_remote_state" "foundation_db" {
   backend = "s3"
   config = {
     bucket         = "payflow-tfstate-003"
@@ -29,8 +29,8 @@ module "rds" {
   name_prefix = local.name_prefix
   tags        = local.tags
 
-  vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
+  vpc_id         = data.terraform_remote_state.foundation_db.outputs.spoke_vpc_id
+  subnet_ids     = data.terraform_remote_state.foundation_db.outputs.spoke_data_private_subnet_ids
   allowed_sg_ids = [module.eks.node_security_group_id]
 
   db_name                 = var.rds_db_name
@@ -46,8 +46,8 @@ module "redis" {
   name_prefix = local.name_prefix
   tags        = local.tags
 
-  vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
+  vpc_id         = data.terraform_remote_state.foundation_db.outputs.spoke_vpc_id
+  subnet_ids     = data.terraform_remote_state.foundation_db.outputs.spoke_data_private_subnet_ids
   allowed_sg_ids = [module.eks.node_security_group_id]
 
   node_type = var.redis_node_type
@@ -59,8 +59,8 @@ module "rabbitmq" {
   name_prefix = local.name_prefix
   tags        = local.tags
 
-  vpc_id         = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  subnet_ids     = data.terraform_remote_state.foundation.outputs.spoke_data_private_subnet_ids
+  vpc_id         = data.terraform_remote_state.foundation_db.outputs.spoke_vpc_id
+  subnet_ids     = data.terraform_remote_state.foundation_db.outputs.spoke_data_private_subnet_ids
   allowed_sg_ids = [module.eks.node_security_group_id]
 
   username                   = var.mq_username
