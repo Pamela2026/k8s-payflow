@@ -7,6 +7,8 @@ AUTO_APPROVE="${AUTO_APPROVE:-false}"
 SKIP_FOUNDATION="${SKIP_FOUNDATION:-false}"
 K8S_TEARDOWN="${K8S_TEARDOWN:-false}"
 K8S_ENV_DIR="${K8S_ENV_DIR:-overlays/${ENV}}"
+BASTION_INSTANCE_ID="${BASTION_INSTANCE_ID:-}"
+BASTION_REPO_DIR="${BASTION_REPO_DIR:-/home/ssm-user/k8s-payflow}"
 
 if ! command -v terraform >/dev/null 2>&1; then
   echo "terraform not found in PATH" >&2
@@ -48,6 +50,67 @@ tf_destroy() {
   fi
 }
 
+discover_bastion() {
+  local id
+  id="$(aws ec2 describe-instances \
+    --region "$REGION" \
+    --filters "Name=tag:Name,Values=*-${ENV}-bastion" "Name=instance-state-name,Values=running" \
+    --query 'Reservations[0].Instances[0].InstanceId' \
+    --output text 2>/dev/null || true)"
+  if [[ -z "$id" || "$id" == "None" ]]; then
+    id="$(aws ec2 describe-instances \
+      --region "$REGION" \
+      --filters "Name=tag:Name,Values=*-bastion" "Name=instance-state-name,Values=running" \
+      --query 'Reservations[0].Instances[0].InstanceId' \
+      --output text 2>/dev/null || true)"
+  fi
+  [[ "$id" == "None" ]] && id=""
+  echo "$id"
+}
+
+ssm_run() {
+  local script="$1"
+
+  local payload
+  payload="$(jq -nc --arg s "$script" '{commands:["bash -lc " + ($s|tojson)]}')"
+
+  local cmd_id
+  cmd_id="$(aws ssm send-command \
+    --region "$REGION" \
+    --instance-ids "$BASTION_INSTANCE_ID" \
+    --document-name "AWS-RunShellScript" \
+    --comment "payflow teardown ($ENV)" \
+    --parameters "$payload" \
+    --query 'Command.CommandId' \
+    --output text)"
+
+  echo "==> SSM command started: $cmd_id"
+
+  aws ssm wait command-executed \
+    --region "$REGION" \
+    --command-id "$cmd_id" \
+    --instance-id "$BASTION_INSTANCE_ID"
+
+  local status
+  status="$(aws ssm list-command-invocations \
+    --region "$REGION" \
+    --command-id "$cmd_id" \
+    --details \
+    --query 'CommandInvocations[0].Status' \
+    --output text)"
+
+  if [[ "$status" != "Success" ]]; then
+    echo "Bastion teardown step failed (SSM status: $status)." >&2
+    aws ssm list-command-invocations \
+      --region "$REGION" \
+      --command-id "$cmd_id" \
+      --details \
+      --query 'CommandInvocations[0].CommandPlugins[0].Output' \
+      --output text >&2 || true
+    exit 1
+  fi
+}
+
 confirm_destroy || { echo "Aborted."; exit 1; }
 
 # Optional Kubernetes teardown (k8s resources only).
@@ -64,25 +127,48 @@ if [[ "$K8S_TEARDOWN" == "true" ]]; then
   fi
 fi
 
+if [[ -z "$BASTION_INSTANCE_ID" ]]; then
+  BASTION_INSTANCE_ID="$(discover_bastion)"
+fi
+if [[ -z "$BASTION_INSTANCE_ID" ]]; then
+  echo "Unable to discover bastion instance id. Set BASTION_INSTANCE_ID explicitly if you want platform/addons teardown." >&2
+else
+  echo "==> Using bastion instance: $BASTION_INSTANCE_ID"
+fi
+
 # Destroy order:
 # 1) Kubernetes workloads first (so ingress controller can clean up ALB resources)
-# 2) Edge last-created Terraform (CloudFront/Route53) next
-# 3) platform/addons (Helm/Kubernetes providers) from the bastion
+# 2) platform/addons from the bastion (Helm/Kubernetes providers)
+# 3) Optional edge Terraform if it was ever enabled (CloudFront/Route53)
 # 4) platform/infra then foundation (AWS-only; safe from local)
 
-tf_destroy "$EDGE_DIR"
-
-cat <<EOF
+if [[ -n "$BASTION_INSTANCE_ID" ]]; then
+  ssm_run "$(cat <<EOS
+set -euo pipefail
+cd "$BASTION_REPO_DIR/terraform/environments/$ENV/platform/addons"
+terraform init
+terraform destroy -auto-approve -var-file=terraform.tfvars
+EOS
+)"
+else
+  cat <<EOF
 
 ==> Reminder
 
-platform/addons uses Kubernetes/Helm providers and should typically be destroyed from the bastion.
-If you need it, run on the bastion:
+platform/addons uses Kubernetes/Helm providers and was not destroyed automatically.
+If you want it gone, run on the bastion:
   cd /home/ssm-user/k8s-payflow/terraform/environments/${ENV}/platform/addons
   terraform init
-  terraform destroy -var-file=terraform.tfvars
+  terraform destroy -auto-approve -var-file=terraform.tfvars
 
 EOF
+fi
+
+if [[ -d "$EDGE_DIR" ]]; then
+  tf_destroy "$EDGE_DIR"
+else
+  echo "Skipping edge destroy (directory not found: $EDGE_DIR)"
+fi
 
 tf_destroy "$PLATFORM_INFRA_DIR"
 if [[ "$SKIP_FOUNDATION" != "true" ]]; then
