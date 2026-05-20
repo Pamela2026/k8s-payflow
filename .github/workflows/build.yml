@@ -288,9 +288,15 @@ jobs:
 
           for image in "${IMAGES[@]}"; do
             yq -i \
-              "(.images[] | select(.name == \"${ECR_PREFIX}/${image}\") | .newTag) = strenv(SHA_TAG)" \
+              "(.images[] | select(.newName == \"${ECR_PREFIX}/${image}\") | .newTag) = strenv(SHA_TAG)" \
               "${OVERLAY_FILE}"
           done
+
+          UPDATED_COUNT="$(yq '.images | map(select(.newTag == strenv(SHA_TAG))) | length' "${OVERLAY_FILE}")"
+          if [ "${UPDATED_COUNT}" -ne "${#IMAGES[@]}" ]; then
+            echo "Expected to update ${#IMAGES[@]} image tags, but updated ${UPDATED_COUNT}."
+            exit 1
+          fi
 
           if git diff --quiet -- "${OVERLAY_FILE}"; then
             echo "No overlay tag changes to commit."
