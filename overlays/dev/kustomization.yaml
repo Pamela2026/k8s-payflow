@@ -1,35 +1,31 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 labels:
   - pairs:
       env: dev
       platform: eks
-
 resources:
   - ../../k8s
   - external-secrets.yaml
-
 images:
   - name: pamela001/payflow-wallet-api-gateway
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-api-gateway
-    newTag: v2
+    newTag: aab9338fe607c20335a6c7b65d8342fc7c879123
   - name: pamela001/payflow-wallet-auth-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-auth-service
-    newTag: v2
+    newTag: aab9338fe607c20335a6c7b65d8342fc7c879123
   - name: pamela001/payflow-wallet-frontend
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-frontend
-    newTag: v3
+    newTag: aab9338fe607c20335a6c7b65d8342fc7c879123
   - name: pamela001/payflow-wallet-notification-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-notification-service
-    newTag: v2
+    newTag: aab9338fe607c20335a6c7b65d8342fc7c879123
   - name: pamela001/payflow-wallet-transaction-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-transaction-service
-    newTag: v2
+    newTag: aab9338fe607c20335a6c7b65d8342fc7c879123
   - name: pamela001/payflow-wallet-wallet-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-wallet-service
-    newTag: v2
-
+    newTag: aab9338fe607c20335a6c7b65d8342fc7c879123
 patches:
   - path: aws-managed-services-patch.yaml
   - path: patch-configmap.yaml
