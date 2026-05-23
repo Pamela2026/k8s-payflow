@@ -62,6 +62,13 @@ moved {
   to   = module.fin_ops
 }
 
+module "ecr" {
+  source = "../../../modules/ecr"
+
+  repositories = var.ecr_repositories
+  tags         = local.tags
+}
+
 module "fin_ops" {
   source = "../../../modules/fin_ops"
 

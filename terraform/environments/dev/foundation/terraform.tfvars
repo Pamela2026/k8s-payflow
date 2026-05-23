@@ -32,6 +32,15 @@ tags = {
   Owner = "payflow-wallet"
 }
 
+ecr_repositories = [
+  "payflow-wallet-api-gateway",
+  "payflow-wallet-auth-service",
+  "payflow-wallet-frontend",
+  "payflow-wallet-notification-service",
+  "payflow-wallet-transaction-service",
+  "payflow-wallet-wallet-service"
+]
+
 #---- FinOps (AWS Budgets + Anomaly Detection) ----
 enable_fin_ops            = true
 fin_ops_budget_amount     = 500

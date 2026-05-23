@@ -15,15 +15,6 @@ endpoint_public_access  = false
 terraform_user_arn = "arn:aws:iam::725094769583:role/for-payflow-terraform"
 bastion_vpc_cidr   = "10.0.0.0/16"
 
-ecr_repositories = [
-  "payflow-wallet-api-gateway",
-  "payflow-wallet-auth-service",
-  "payflow-wallet-frontend",
-  "payflow-wallet-notification-service",
-  "payflow-wallet-transaction-service",
-  "payflow-wallet-wallet-service"
-]
-
 # Edge / Route 53 are disabled for now.
 # Activate these if you own a domain.
 # enable_alb_cert = true

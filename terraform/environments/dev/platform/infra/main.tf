@@ -45,13 +45,6 @@ module "eks" {
   node_desired_size   = var.node_desired_size
 }
 
-module "ecr" {
-  source = "../../../../modules/ecr"
-
-  repositories = var.ecr_repositories
-  tags         = local.tags
-}
-
 # Edge / Route 53 wiring is intentionally disabled in the current setup.
 # Activate this block here if you own a domain.
 #

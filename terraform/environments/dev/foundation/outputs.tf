@@ -62,3 +62,8 @@ output "spoke_private_route_table_id" {
   description = "Spoke private route table ID."
   value       = module.vpc.spoke_private_route_table_id
 }
+
+output "ecr_repository_urls" {
+  description = "Map of ECR repository name to URL."
+  value       = module.ecr.repository_urls
+}

@@ -79,12 +79,6 @@ variable "bastion_vpc_cidr" {
   default     = null
 }
 
-variable "ecr_repositories" {
-  description = "ECR repositories to create for Payflow services."
-  type        = list(string)
-  default     = []
-}
-
 variable "enable_alb_cert" {
   description = "Whether to request an ACM cert for the ALB."
   type        = bool

@@ -38,11 +38,6 @@ output "node_security_group_id" {
   value       = module.eks.node_security_group_id
 }
 
-output "ecr_repository_urls" {
-  description = "Map of ECR repository name to URL."
-  value       = module.ecr.repository_urls
-}
-
 # Edge / Route 53 outputs are intentionally disabled in the current setup.
 # Re-enable if you own a domain.
 #
