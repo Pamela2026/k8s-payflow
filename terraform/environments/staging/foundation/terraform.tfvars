@@ -29,3 +29,12 @@ bastion_ami_id              = null
 tags = {
   Owner = "payflow-wallet"
 }
+
+ecr_repositories = [
+  "payflow-wallet-api-gateway",
+  "payflow-wallet-auth-service",
+  "payflow-wallet-frontend",
+  "payflow-wallet-notification-service",
+  "payflow-wallet-transaction-service",
+  "payflow-wallet-wallet-service"
+]

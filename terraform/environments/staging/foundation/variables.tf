@@ -130,6 +130,12 @@ variable "bastion_ami_id" {
   default     = null
 }
 
+variable "ecr_repositories" {
+  description = "ECR repositories to create for Payflow services."
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Additional tags applied to all resources."
   type        = map(string)
