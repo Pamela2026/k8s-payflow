@@ -70,12 +70,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           submodules: recursive
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722  # v4.1.0
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
@@ -92,7 +92,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076  # v2.0.1
 
       - name: Resolve account and registry
         id: registry
@@ -107,24 +107,30 @@ jobs:
           echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
           echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
 
-      - name: Verify ECR repository exists
+      - name: Wait for ECR repository
         shell: bash
         run: |
           set -euo pipefail
 
-          if ! aws ecr describe-repositories \
-            --repository-names "${{ matrix.repo }}" \
-            >/dev/null 2>&1; then
-            echo "ECR repository ${{ matrix.repo }} does not exist yet."
-            echo "Run the Terraform platform/infra apply first so Terraform creates the repository."
-            exit 1
-          fi
+          for i in $(seq 1 20); do
+            if aws ecr describe-repositories \
+              --repository-names "${{ matrix.repo }}" \
+              >/dev/null 2>&1; then
+              echo "ECR repository ${{ matrix.repo }} is ready."
+              exit 0
+            fi
+            echo "Attempt ${i}/20: ECR repository ${{ matrix.repo }} not ready, retrying in 30s..."
+            sleep 30
+          done
+
+          echo "ECR repository ${{ matrix.repo }} not found after 10 minutes. Ensure the foundation Terraform apply has completed."
+          exit 1
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2  # v3.10.0
 
       - name: Build image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4  # v6.15.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.context }}/${{ matrix.dockerfile }}
@@ -137,7 +143,7 @@ jobs:
 
       - name: Scan built image
         id: trivy_scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
         continue-on-error: ${{ env.TARGET_ENV != 'prod' }}
         with:
           image-ref: ${{ matrix.name }}:${{ env.IMAGE_TAG }}
@@ -191,7 +197,7 @@ jobs:
 
       - name: Upload matrix status
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: build-status-${{ matrix.name }}
           path: .status/${{ matrix.name }}.txt
@@ -213,13 +219,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722  # v4.1.0
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
@@ -353,12 +359,12 @@ jobs:
       TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || (github.ref_name == 'main' && 'prod' || 'dev') }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: "3.11"
 
@@ -372,7 +378,7 @@ jobs:
           python scripts/pipeline-contracts.py >> "$GITHUB_STEP_SUMMARY"
 
       - name: Download matrix status artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
         with:
           pattern: build-status-*
           path: status-artifacts
