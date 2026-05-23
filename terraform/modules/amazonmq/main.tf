@@ -42,16 +42,16 @@ resource "aws_security_group" "this" {
 
 ## Amazon MQ RabbitMQ broker. ##
 resource "aws_mq_broker" "this" {
-  broker_name         = "${var.name_prefix}-rabbitmq"
-  engine_type         = "RabbitMQ"
-  engine_version      = var.engine_version
-  host_instance_type  = var.host_instance_type
-  deployment_mode     = var.deployment_mode
+  broker_name                = "${var.name_prefix}-rabbitmq"
+  engine_type                = "RabbitMQ"
+  engine_version             = var.engine_version
+  host_instance_type         = var.host_instance_type
+  deployment_mode            = var.deployment_mode
   auto_minor_version_upgrade = var.auto_minor_version_upgrade
-  publicly_accessible = false
+  publicly_accessible        = false
 
-  subnet_ids         = local.broker_subnet_ids
-  security_groups    = [aws_security_group.this.id]
+  subnet_ids      = local.broker_subnet_ids
+  security_groups = [aws_security_group.this.id]
 
   user {
     username = var.username

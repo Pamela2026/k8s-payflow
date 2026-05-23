@@ -19,17 +19,17 @@ data "terraform_remote_state" "foundation" {
 module "eks" {
   source = "../../../../modules/eks"
 
-  name_prefix    = local.name_prefix
-  tags           = local.tags
-  region         = var.region
-  cluster_name   = var.cluster_name
+  name_prefix     = local.name_prefix
+  tags            = local.tags
+  region          = var.region
+  cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
 
-  vpc_id              = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
-  private_subnet_ids  = data.terraform_remote_state.foundation.outputs.spoke_private_subnet_ids
-  public_subnet_ids   = data.terraform_remote_state.foundation.outputs.spoke_public_subnet_ids
-  bastion_role_arn    = data.terraform_remote_state.foundation.outputs.bastion_role_arn
-  terraform_user_arn  = var.terraform_user_arn
+  vpc_id             = data.terraform_remote_state.foundation.outputs.spoke_vpc_id
+  private_subnet_ids = data.terraform_remote_state.foundation.outputs.spoke_private_subnet_ids
+  public_subnet_ids  = data.terraform_remote_state.foundation.outputs.spoke_public_subnet_ids
+  bastion_role_arn   = data.terraform_remote_state.foundation.outputs.bastion_role_arn
+  terraform_user_arn = var.terraform_user_arn
   # Dependency mapping:
   # - vpc_id -> foundation.spoke_vpc_id
   # - private_subnet_ids -> foundation.spoke_private_subnet_ids

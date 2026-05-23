@@ -22,9 +22,9 @@ resource "aws_iam_role" "bastion" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "ec2.amazonaws.com" },
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 
@@ -192,9 +192,9 @@ resource "aws_iam_policy" "bastion_platform" {
         Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/oidc.eks.${var.region}.amazonaws.com/id/*"
       },
       {
-        Sid    = "IAMCreateServiceLinkedRoleForEKS",
-        Effect = "Allow",
-        Action = "iam:CreateServiceLinkedRole",
+        Sid      = "IAMCreateServiceLinkedRoleForEKS",
+        Effect   = "Allow",
+        Action   = "iam:CreateServiceLinkedRole",
         Resource = "*",
         Condition = {
           StringEquals = {

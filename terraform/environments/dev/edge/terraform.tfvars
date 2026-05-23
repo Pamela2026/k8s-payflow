@@ -1,6 +1,6 @@
-region        = "us-east-1"
-environment   = "dev"
-project_name  = "payflow"
+region       = "us-east-1"
+environment  = "dev"
+project_name = "payflow"
 
 # Edge is disabled in the current setup.
 # Activate the configuration if you own a domain and want to set up a CDN and WAF for your application.

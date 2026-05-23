@@ -58,15 +58,15 @@ resource "aws_db_instance" "this" {
   username = var.username
   password = var.password
 
-  allocated_storage     = var.allocated_storage
-  db_subnet_group_name  = aws_db_subnet_group.this.name
+  allocated_storage      = var.allocated_storage
+  db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [aws_security_group.this.id]
 
-  publicly_accessible  = var.publicly_accessible
-  multi_az             = var.multi_az
-  storage_encrypted    = var.storage_encrypted
+  publicly_accessible     = var.publicly_accessible
+  multi_az                = var.multi_az
+  storage_encrypted       = var.storage_encrypted
   backup_retention_period = var.backup_retention_period
-  parameter_group_name = aws_db_parameter_group.this.name
+  parameter_group_name    = aws_db_parameter_group.this.name
 
   skip_final_snapshot = var.skip_final_snapshot
   deletion_protection = var.deletion_protection

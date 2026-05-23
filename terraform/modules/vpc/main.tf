@@ -42,10 +42,10 @@ locals {
     }
   }
 
-  spoke_public_subnet_ids  = [for k in sort(keys(aws_subnet.spoke_public)) : aws_subnet.spoke_public[k].id]
-  spoke_private_subnet_ids = [for k in sort(keys(aws_subnet.spoke_private)) : aws_subnet.spoke_private[k].id]
+  spoke_public_subnet_ids       = [for k in sort(keys(aws_subnet.spoke_public)) : aws_subnet.spoke_public[k].id]
+  spoke_private_subnet_ids      = [for k in sort(keys(aws_subnet.spoke_private)) : aws_subnet.spoke_private[k].id]
   spoke_data_private_subnet_ids = [for k in sort(keys(aws_subnet.spoke_data_private)) : aws_subnet.spoke_data_private[k].id]
-  hub_private_subnet_ids   = [for k in sort(keys(aws_subnet.hub_private)) : aws_subnet.hub_private[k].id]
+  hub_private_subnet_ids        = [for k in sort(keys(aws_subnet.hub_private)) : aws_subnet.hub_private[k].id]
 
   spoke_private_route_table_ids = var.enable_multi_az_spoke_nat_gateway ? [for rt in values(aws_route_table.spoke_private_az) : rt.id] : [aws_route_table.spoke_private.id]
 }
@@ -101,10 +101,10 @@ resource "aws_internet_gateway" "spoke" {
 ## Hub public subnets. ##
 ## Depends on: aws_vpc.hub and var.azs. ##
 resource "aws_subnet" "hub_public" {
-  for_each               = local.hub_public_subnets
-  vpc_id                 = aws_vpc.hub.id
-  cidr_block             = each.value.cidr
-  availability_zone      = each.value.az
+  for_each                = local.hub_public_subnets
+  vpc_id                  = aws_vpc.hub.id
+  cidr_block              = each.value.cidr
+  availability_zone       = each.value.az
   map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
@@ -128,15 +128,15 @@ resource "aws_subnet" "hub_private" {
 ## Spoke public subnets used for load balancers and NAT. ##
 ## Depends on: aws_vpc.spoke, var.azs, and EKS tag inputs. ##
 resource "aws_subnet" "spoke_public" {
-  for_each               = local.spoke_public_subnets
-  vpc_id                 = aws_vpc.spoke.id
-  cidr_block             = each.value.cidr
-  availability_zone      = each.value.az
+  for_each                = local.spoke_public_subnets
+  vpc_id                  = aws_vpc.spoke.id
+  cidr_block              = each.value.cidr
+  availability_zone       = each.value.az
   map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
-    Name = "${var.name_prefix}-spoke-public-${each.value.az}"
-    "kubernetes.io/role/elb" = var.eks_cluster_name != "" ? "1" : null
+    Name                                            = "${var.name_prefix}-spoke-public-${each.value.az}"
+    "kubernetes.io/role/elb"                        = var.eks_cluster_name != "" ? "1" : null
     "kubernetes.io/cluster/${var.eks_cluster_name}" = var.eks_cluster_name != "" ? "shared" : null
   })
 }
@@ -150,8 +150,8 @@ resource "aws_subnet" "spoke_private" {
   availability_zone = each.value.az
 
   tags = merge(var.tags, {
-    Name = "${var.name_prefix}-spoke-private-${each.value.az}"
-    "kubernetes.io/role/internal-elb" = var.eks_cluster_name != "" ? "1" : null
+    Name                                            = "${var.name_prefix}-spoke-private-${each.value.az}"
+    "kubernetes.io/role/internal-elb"               = var.eks_cluster_name != "" ? "1" : null
     "kubernetes.io/cluster/${var.eks_cluster_name}" = var.eks_cluster_name != "" ? "shared" : null
   })
 }
@@ -359,10 +359,10 @@ resource "aws_ec2_transit_gateway_route_table" "core" {
 ## Hub attachment to the Transit Gateway. ##
 ## Depends on: aws_vpc.hub, aws_subnet.hub_private, and aws_ec2_transit_gateway.core. ##
 resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
-  count              = var.enable_tgw ? 1 : 0
-  transit_gateway_id = aws_ec2_transit_gateway.core[0].id
-  vpc_id             = aws_vpc.hub.id
-  subnet_ids         = local.hub_private_subnet_ids
+  count                                           = var.enable_tgw ? 1 : 0
+  transit_gateway_id                              = aws_ec2_transit_gateway.core[0].id
+  vpc_id                                          = aws_vpc.hub.id
+  subnet_ids                                      = local.hub_private_subnet_ids
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
 
@@ -374,10 +374,10 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
 ## Spoke attachment to the Transit Gateway. ##
 ## Depends on: aws_vpc.spoke, aws_subnet.spoke_private, and aws_ec2_transit_gateway.core. ##
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
-  count              = var.enable_tgw ? 1 : 0
-  transit_gateway_id = aws_ec2_transit_gateway.core[0].id
-  vpc_id             = aws_vpc.spoke.id
-  subnet_ids         = local.spoke_private_subnet_ids
+  count                                           = var.enable_tgw ? 1 : 0
+  transit_gateway_id                              = aws_ec2_transit_gateway.core[0].id
+  vpc_id                                          = aws_vpc.spoke.id
+  subnet_ids                                      = local.spoke_private_subnet_ids
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
 

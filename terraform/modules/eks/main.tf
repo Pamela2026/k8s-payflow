@@ -6,9 +6,9 @@ resource "aws_iam_role" "cluster" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "eks.amazonaws.com" },
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 
@@ -92,17 +92,17 @@ resource "aws_security_group_rule" "cluster_api_from_bastion_vpc" {
 ## EKS access entry for bastion role (cluster admin). ##
 ## Depends on: aws_eks_cluster.this. ##
 resource "aws_eks_access_entry" "bastion" {
-  count        = var.bastion_role_arn == null ? 0 : 1
-  cluster_name = aws_eks_cluster.this.name
+  count         = var.bastion_role_arn == null ? 0 : 1
+  cluster_name  = aws_eks_cluster.this.name
   principal_arn = var.bastion_role_arn
-  type         = "STANDARD"
+  type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "bastion_admin" {
-  count        = var.bastion_role_arn == null ? 0 : 1
-  cluster_name = aws_eks_cluster.this.name
+  count         = var.bastion_role_arn == null ? 0 : 1
+  cluster_name  = aws_eks_cluster.this.name
   principal_arn = var.bastion_role_arn
-  policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
@@ -137,9 +137,9 @@ resource "aws_iam_role" "node" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "ec2.amazonaws.com" },
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 
@@ -170,7 +170,7 @@ resource "aws_iam_role_policy_attachment" "node_ssm" {
 
 ## Launch template for managed node group (attach node SG). ##
 resource "aws_launch_template" "nodes" {
-  name_prefix            = "${var.name_prefix}-eks-nodes-"
+  name_prefix = "${var.name_prefix}-eks-nodes-"
   vpc_security_group_ids = [
     aws_security_group.nodes.id,
     aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
@@ -226,9 +226,9 @@ resource "aws_iam_role" "alb_controller" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Federated = aws_iam_openid_connect_provider.oidc.arn },
-      Action = "sts:AssumeRoleWithWebIdentity",
+      Action    = "sts:AssumeRoleWithWebIdentity",
       Condition = {
         StringEquals = {
           "${replace(aws_iam_openid_connect_provider.oidc.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller",
@@ -262,9 +262,9 @@ resource "aws_iam_role" "external_secrets" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Federated = aws_iam_openid_connect_provider.oidc.arn },
-      Action = "sts:AssumeRoleWithWebIdentity",
+      Action    = "sts:AssumeRoleWithWebIdentity",
       Condition = {
         StringEquals = {
           "${replace(aws_iam_openid_connect_provider.oidc.url, "https://", "")}:sub" = "system:serviceaccount:external-secrets:external-secrets",
@@ -307,9 +307,9 @@ resource "aws_iam_role" "cluster_autoscaler" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Federated = aws_iam_openid_connect_provider.oidc.arn },
-      Action = "sts:AssumeRoleWithWebIdentity",
+      Action    = "sts:AssumeRoleWithWebIdentity",
       Condition = {
         StringEquals = {
           "${replace(aws_iam_openid_connect_provider.oidc.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler",
@@ -365,9 +365,9 @@ resource "aws_iam_role" "ebs_csi" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Federated = aws_iam_openid_connect_provider.oidc.arn },
-      Action = "sts:AssumeRoleWithWebIdentity",
+      Action    = "sts:AssumeRoleWithWebIdentity",
       Condition = {
         StringEquals = {
           "${replace(aws_iam_openid_connect_provider.oidc.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa",
