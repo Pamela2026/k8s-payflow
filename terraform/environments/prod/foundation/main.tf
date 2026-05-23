@@ -46,3 +46,10 @@ module "bastion" {
   key_name           = var.bastion_key_name
   ami_id             = var.bastion_ami_id
 }
+
+module "ecr" {
+  source = "../../../modules/ecr"
+
+  repositories = var.ecr_repositories
+  tags         = local.tags
+}
