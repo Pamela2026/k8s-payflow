@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Pamela2026/k8s-payflow.git
-    targetRevision: main
+    targetRevision: test
     path: overlays/dev
   destination:
     server: https://kubernetes.default.svc
