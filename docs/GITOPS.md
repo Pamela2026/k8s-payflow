@@ -71,7 +71,7 @@ Recommended security split:
 - `*-apply` environments: restricted apply roles with approvals enabled
 - `*-verify` environments: read-only validation roles for health checks and SSM discovery
 
-The workflow auto-discovers the bastion instance id by querying EC2 instances with a `Name` tag matching `*-<env>-bastion` (preferred) or `*-bastion` (fallback). Ensure your bastion is tagged accordingly and the GitHub OIDC role has `ec2:DescribeInstances`.
+The workflow auto-discovers the bastion instance id by querying EC2 instances with a `Name` tag matching `*-<env>-bastion`. It expects exactly one running bastion for the target environment, so ensure your bastion is tagged accordingly and the GitHub OIDC role has `ec2:DescribeInstances`.
 
 ### Required GitHub Secrets
 
