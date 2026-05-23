@@ -101,7 +101,7 @@ jobs:
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/${{ matrix.layer }}
         run: |
           set -euo pipefail
-          terraform init -backend=false -input=false -lockfile=readonly
+          terraform init -backend=false -input=false 
           terraform validate
 
   helm_lint:
@@ -205,7 +205,7 @@ jobs:
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
         run: |
           set -euo pipefail
-          terraform init -input=false -lockfile=readonly
+          terraform init -input=false 
 
       - name: Terraform Plan
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
@@ -307,7 +307,7 @@ jobs:
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
         run: |
           set -euo pipefail
-          terraform init -input=false -lockfile=readonly
+          terraform init -input=false 
 
       - name: Terraform Plan
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
