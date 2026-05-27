@@ -272,6 +272,12 @@ jobs:
           name: foundation-plan
           path: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
 
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
+        run: |
+          set -euo pipefail
+          terraform init -input=false
+
       - name: Terraform Apply
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
         run: |
@@ -377,6 +383,12 @@ jobs:
         with:
           name: platform-plan
           path: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
+        run: |
+          set -euo pipefail
+          terraform init -input=false
 
       - name: Terraform Apply
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/platform/infra
