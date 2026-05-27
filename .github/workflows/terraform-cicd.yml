@@ -193,23 +193,7 @@ jobs:
         with:
           path: ~/.terraform.d/plugin-cache
           key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722  # v4.1.0
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Terraform Init
-        working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
-        run: |
-          set -euo pipefail
-          terraform init -input=false 
+          save-always: true 
 
       - name: Terraform Plan
         working-directory: terraform/environments/${{ inputs.env || github.event.inputs.env || 'dev' }}/foundation
@@ -299,6 +283,7 @@ jobs:
         with:
           path: ~/.terraform.d/plugin-cache
           key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          save-always: true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
@@ -360,6 +345,7 @@ jobs:
         with:
           path: ~/.terraform.d/plugin-cache
           key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          save-always: true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
