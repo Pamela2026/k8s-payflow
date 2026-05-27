@@ -198,6 +198,7 @@ make_readonly_policy() {
         "secretsmanager:ListSecrets",
         "logs:Describe*",
         "iam:GetRole",
+        "iam:GetRolePolicy",
         "iam:GetPolicy",
         "iam:GetPolicyVersion",
         "iam:GetInstanceProfile",
@@ -207,6 +208,10 @@ make_readonly_policy() {
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",
         "iam:ListOpenIDConnectProviders",
+        "ce:GetAnomalyMonitors",
+        "ce:GetAnomalySubscriptions",
+        "ce:ListAnomalyMonitors",
+        "ce:ListAnomalySubscriptions",
         "autoscaling:Describe*"
       ],
       "Resource": "*"
