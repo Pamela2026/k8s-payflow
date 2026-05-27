@@ -419,26 +419,33 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           BASTION_INSTANCE_ID: ${{ needs.discover_bastion.outputs.bastion_instance_id }}
           BASTION_REPO_DIR: ${{ secrets.BASTION_REPO_DIR }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
           set -euo pipefail
 
           BASTION_REPO_DIR="${BASTION_REPO_DIR:-${BASTION_REPO_DIR_DEFAULT}}"
+          REPO_URL="${REPO_URL:-https://github.com/${{ github.repository }}.git}"
 
           COMMAND_ID=$(aws ssm send-command \
             --region "${AWS_REGION}" \
             --instance-ids "${BASTION_INSTANCE_ID}" \
             --document-name "AWS-RunShellScript" \
             --comment "platform/addons apply ${TARGET_ENV}" \
-            --parameters commands='[
-              "set -euo pipefail",
-              "cd \"'"${BASTION_REPO_DIR}"'\"",
-              "git fetch --all --tags",
-              "git checkout '"${GITHUB_SHA}"'",
-              "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
-              "cd terraform/environments/'"${TARGET_ENV}"'/platform/addons",
-              "terraform init -input=false -reconfigure",
-              "terraform apply -input=false -auto-approve -var-file=terraform.tfvars"
-            ]' \
+              --parameters commands='[
+                "set -euo pipefail",
+                "if [ -d \"'"${BASTION_REPO_DIR}"'/.git\" ]; then",
+                "  cd \"'"${BASTION_REPO_DIR}"'\"",
+                "  git fetch --all --tags",
+                "else",
+                "  git clone \"'"${REPO_URL}"'\" \"'"${BASTION_REPO_DIR}"'\"",
+                "  cd \"'"${BASTION_REPO_DIR}"'\"",
+                "fi",
+                "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
+                "git checkout '"${GITHUB_SHA}"'",
+                "cd terraform/environments/'"${TARGET_ENV}"'/platform/addons",
+                "terraform init -input=false -reconfigure",
+                "terraform apply -input=false -auto-approve -var-file=terraform.tfvars"
+              ]' \
             --query "Command.CommandId" \
             --output text)
 

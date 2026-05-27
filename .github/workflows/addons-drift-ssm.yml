@@ -73,18 +73,25 @@ jobs:
           AWS_REGION: us-east-1
           TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.env || 'dev' }}
           BASTION_REPO_DIR: ${{ secrets.BASTION_REPO_DIR }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
           set -euo pipefail
 
           BASTION_REPO_DIR="${BASTION_REPO_DIR:-/home/ssm-user/k8s-payflow}"
+          REPO_URL="${REPO_URL:-https://github.com/${{ github.repository }}.git}"
           BASTION_INSTANCE_ID="${{ steps.bastion.outputs.bastion_instance_id }}"
 
           read -r -d '' COMMANDS_JSON <<EOF || true
           {
             "commands": [
               "set -euo pipefail",
-              "cd \"${BASTION_REPO_DIR}\"",
-              "git pull --ff-only || true",
+              "if [ -d \"${BASTION_REPO_DIR}/.git\" ]; then",
+              "  cd \"${BASTION_REPO_DIR}\"",
+              "  git pull --ff-only || true",
+              "else",
+              "  git clone \"${REPO_URL}\" \"${BASTION_REPO_DIR}\"",
+              "  cd \"${BASTION_REPO_DIR}\"",
+              "fi",
               "cd terraform/environments/${TARGET_ENV}/platform/addons",
 
               "terraform init -input=false -reconfigure",
