@@ -176,43 +176,41 @@ make_readonly_policy() {
       "Effect": "Allow",
       "Action": [
         "ec2:Describe*",
+        "ec2:Get*",
+        "ec2:Search*",
         "eks:Describe*",
         "eks:List*",
-        "ecr:DescribeRepositories",
-        "ecr:DescribeImages",
-        "ecr:ListImages",
-        "acm:DescribeCertificate",
-        "acm:ListCertificates",
-        "route53:GetHostedZone",
-        "route53:ListHostedZones",
-        "route53:ListResourceRecordSets",
-        "route53:GetChange",
-        "wafv2:GetWebACL",
-        "wafv2:ListWebACLs",
-        "cloudfront:GetDistribution",
-        "cloudfront:ListDistributions",
+        "ecr:Describe*",
+        "ecr:List*",
+        "ecr:Get*",
+        "acm:Describe*",
+        "acm:List*",
+        "route53:Get*",
+        "route53:List*",
+        "wafv2:Get*",
+        "wafv2:List*",
+        "cloudfront:Get*",
+        "cloudfront:List*",
+        "cloudfront:Describe*",
         "rds:Describe*",
+        "rds:List*",
         "elasticache:Describe*",
+        "elasticache:List*",
         "mq:Describe*",
-        "secretsmanager:DescribeSecret",
-        "secretsmanager:ListSecrets",
+        "mq:List*",
+        "secretsmanager:Describe*",
+        "secretsmanager:List*",
+        "secretsmanager:Get*",
         "logs:Describe*",
-        "iam:GetRole",
-        "iam:GetRolePolicy",
-        "iam:GetPolicy",
-        "iam:GetPolicyVersion",
-        "iam:GetInstanceProfile",
-        "iam:GetOpenIDConnectProvider",
-        "iam:ListRoles",
-        "iam:ListPolicies",
-        "iam:ListRolePolicies",
-        "iam:ListAttachedRolePolicies",
-        "iam:ListOpenIDConnectProviders",
-        "ce:GetAnomalyMonitors",
-        "ce:GetAnomalySubscriptions",
-        "ce:ListAnomalyMonitors",
-        "ce:ListAnomalySubscriptions",
-        "autoscaling:Describe*"
+        "logs:List*",
+        "iam:Get*",
+        "iam:List*",
+        "ce:Get*",
+        "ce:List*",
+        "autoscaling:Describe*",
+        "budgets:Describe*",
+        "budgets:List*",
+        "budgets:View*"
       ],
       "Resource": "*"
     }
@@ -279,14 +277,14 @@ make_build_policy() {
       "Action": "ecr:GetAuthorizationToken",
       "Resource": "*"
     },
-      {
-        "Effect": "Allow",
-        "Action": [
-          "ecr:DescribeRepositories",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:DescribeRepositories",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
         "ecr:PutImage"
       ],
       "Resource": "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/payflow-wallet-*"
@@ -359,7 +357,15 @@ make_foundation_apply_policy() {
         "ec2:EnableTransitGatewayRouteTablePropagation",
         "ec2:DisableTransitGatewayRouteTablePropagation",
         "ec2:CreateTransitGatewayRoute",
-        "ec2:DeleteTransitGatewayRoute"
+        "ec2:DeleteTransitGatewayRoute",
+        "ec2:GetTransitGatewayRouteTableAssociations",
+        "ec2:GetTransitGatewayRouteTablePropagations",
+        "ec2:SearchTransitGatewayRoutes",
+        "ecr:ListTagsForResource",
+        "ecr:GetLifecyclePolicy",
+        "budgets:ViewBudget",
+        "budgets:ListTagsForResource",
+        "ce:ListTagsForResource"
       ],
       "Resource": "*"
     },
@@ -369,11 +375,14 @@ make_foundation_apply_policy() {
         "ecr:CreateRepository",
         "ecr:DeleteRepository",
         "ecr:PutLifecyclePolicy",
+        "ecr:GetLifecyclePolicy",
+        "ecr:DeleteLifecyclePolicy",
         "ecr:SetRepositoryPolicy",
         "ecr:TagResource",
         "ecr:DescribeRepositories",
         "ecr:ListImages",
-        "ecr:DescribeImages"
+        "ecr:DescribeImages",
+        "ecr:ListTagsForResource"
       ],
       "Resource": "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/payflow-wallet-*"
     },
@@ -407,6 +416,8 @@ make_foundation_apply_policy() {
         "iam:ListPolicies",
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",
+        "iam:ListPolicyVersions",
+        "iam:ListRoleTags",
         "iam:ListOpenIDConnectProviders",
         "iam:ListInstanceProfilesForRole"
       ],
@@ -420,10 +431,13 @@ make_foundation_apply_policy() {
         "budgets:DeleteBudget",
         "budgets:TagResource",
         "budgets:UntagResource",
+        "budgets:ListTagsForResource",
         "ce:CreateAnomalyMonitor",
         "ce:DeleteAnomalyMonitor",
         "ce:GetAnomalyMonitors",
         "ce:GetAnomalySubscriptions",
+        "ce:ListTagsForResource",
+        "budgets:ViewBudget",
         "ce:ListAnomalyMonitors",
         "ce:ListAnomalySubscriptions",
         "ce:CreateAnomalySubscription",
@@ -432,6 +446,34 @@ make_foundation_apply_policy() {
         "sns:DeleteTopic",
         "sns:Subscribe",
         "sns:SetTopicAttributes"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:CreateSecret",
+        "secretsmanager:DeleteSecret",
+        "secretsmanager:PutSecretValue",
+        "secretsmanager:UpdateSecret",
+        "secretsmanager:TagResource",
+        "secretsmanager:UntagResource",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:ListSecrets",
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances",
+        "ec2:TerminateInstances",
+        "ec2:StopInstances",
+        "ec2:StartInstances",
+        "ec2:RebootInstances",
+        "ec2:ModifyInstanceAttribute",
+        "ec2:ModifyInstancePlacement"
       ],
       "Resource": "*"
     }
@@ -460,6 +502,9 @@ make_platform_apply_policy() {
         "eks:DeleteAccessEntry",
         "eks:AssociateAccessPolicy",
         "eks:DisassociateAccessPolicy",
+        "eks:CreateAddon",
+        "eks:DeleteAddon",
+        "eks:UpdateAddon",
         "eks:TagResource",
         "eks:UntagResource",
         "eks:Describe*",
@@ -476,6 +521,7 @@ make_platform_apply_policy() {
         "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress",
         "ec2:RevokeSecurityGroupEgress",
+        "ec2:RunInstances",
         "ec2:CreateLaunchTemplate",
         "ec2:DeleteLaunchTemplate",
         "ec2:CreateLaunchTemplateVersion",
@@ -514,6 +560,8 @@ make_platform_apply_policy() {
         "iam:ListPolicies",
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",
+        "iam:ListPolicyVersions",
+        "iam:ListRoleTags",
         "iam:ListOpenIDConnectProviders",
         "iam:ListInstanceProfilesForRole"
       ],
@@ -522,7 +570,12 @@ make_platform_apply_policy() {
     {
       "Effect": "Allow",
       "Action": [
-        "autoscaling:Describe*"
+        "autoscaling:Describe*",
+        "autoscaling:CreateAutoScalingGroup",
+        "autoscaling:DeleteAutoScalingGroup",
+        "autoscaling:UpdateAutoScalingGroup",
+        "autoscaling:CreateLaunchConfiguration",
+        "autoscaling:DeleteLaunchConfiguration"
       ],
       "Resource": "*"
     },
@@ -534,6 +587,7 @@ make_platform_apply_policy() {
         "ecr:PutLifecyclePolicy",
         "ecr:SetRepositoryPolicy",
         "ecr:TagResource",
+        "ecr:ListTagsForResource",
         "ecr:DescribeRepositories",
         "ecr:ListImages",
         "ecr:DescribeImages"
@@ -550,6 +604,8 @@ make_platform_apply_policy() {
         "rds:DeleteDBSubnetGroup",
         "rds:CreateDBParameterGroup",
         "rds:DeleteDBParameterGroup",
+        "rds:AddTagsToResource",
+        "rds:ListTagsForResource",
         "rds:Describe*"
       ],
       "Resource": "*"
@@ -561,6 +617,8 @@ make_platform_apply_policy() {
         "elasticache:DeleteReplicationGroup",
         "elasticache:CreateCacheSubnetGroup",
         "elasticache:DeleteCacheSubnetGroup",
+        "elasticache:AddTagsToResource",
+        "elasticache:ListTagsForResource",
         "elasticache:Describe*"
       ],
       "Resource": "*"
@@ -571,6 +629,9 @@ make_platform_apply_policy() {
         "mq:CreateBroker",
         "mq:DeleteBroker",
         "mq:UpdateBroker",
+        "mq:CreateTags",
+        "mq:DeleteTags",
+        "mq:ListTagsForResource",
         "mq:Describe*"
       ],
       "Resource": "*"
@@ -583,8 +644,10 @@ make_platform_apply_policy() {
         "secretsmanager:PutSecretValue",
         "secretsmanager:UpdateSecret",
         "secretsmanager:TagResource",
+        "secretsmanager:ListTagsForResource",
         "secretsmanager:DescribeSecret",
-        "secretsmanager:ListSecrets"
+        "secretsmanager:ListSecrets",
+        "secretsmanager:GetResourcePolicy"
       ],
       "Resource": "*"
     },
@@ -626,7 +689,9 @@ make_addons_apply_policy() {
     {
       "Effect": "Allow",
       "Action": [
-        "eks:DescribeCluster"
+        "eks:DescribeCluster",
+        "eks:TagResource",
+        "eks:UntagResource"
       ],
       "Resource": "arn:aws:eks:${REGION}:${ACCOUNT_ID}:cluster/payflow-eks-${env_name}"
     }
