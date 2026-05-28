@@ -150,7 +150,7 @@ resource "helm_release" "cluster_autoscaler" {
 ## Prometheus (Helm). ##
 resource "helm_release" "prometheus" {
   count            = var.enable_prometheus ? 1 : 0
-  depends_on       = [helm_release.alb_controller, kubernetes_storage_class.gp2]
+  depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "payflow-prometheus"
   namespace        = "monitoring"
   repository       = "https://prometheus-community.github.io/helm-charts"
@@ -174,7 +174,7 @@ resource "helm_release" "grafana" {
 ## Loki (Helm). ##
 resource "helm_release" "loki" {
   count            = var.enable_loki ? 1 : 0
-  depends_on       = [helm_release.alb_controller, kubernetes_storage_class.gp2]
+  depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "payflow-loki"
   namespace        = "monitoring"
   repository       = "https://grafana.github.io/helm-charts"
@@ -210,7 +210,7 @@ resource "helm_release" "postgres_exporter" {
 ## Kubecost (Helm). ##
 resource "helm_release" "kubecost" {
   count            = var.enable_kubecost ? 1 : 0
-  depends_on       = [helm_release.alb_controller, kubernetes_storage_class.gp2]
+  depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "kubecost"
   namespace        = "kubecost"
   repository       = "https://kubecost.github.io/cost-analyzer/"
