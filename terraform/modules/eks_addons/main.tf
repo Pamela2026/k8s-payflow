@@ -32,8 +32,8 @@ resource "kubernetes_manifest" "gp2" {
         "storageclass.kubernetes.io/is-default-class" = "true"
       }
     }
-    provisioner        = "ebs.csi.aws.com"
-    volumeBindingMode  = "WaitForFirstConsumer"
+    provisioner          = "ebs.csi.aws.com"
+    volumeBindingMode    = "WaitForFirstConsumer"
     allowVolumeExpansion = true
     parameters = {
       type      = "gp2"
