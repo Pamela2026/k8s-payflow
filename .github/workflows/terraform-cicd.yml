@@ -292,6 +292,11 @@ jobs:
 
     environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-plan
 
+    env:
+      TF_VAR_rds_password: ${{ secrets.TF_VAR_RDS_PASSWORD }}
+      TF_VAR_mq_password: ${{ secrets.TF_VAR_MQ_PASSWORD }}
+      TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
@@ -352,6 +357,11 @@ jobs:
     needs: plan_platform
 
     environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-apply
+
+    env:
+      TF_VAR_rds_password: ${{ secrets.TF_VAR_RDS_PASSWORD }}
+      TF_VAR_mq_password: ${{ secrets.TF_VAR_MQ_PASSWORD }}
+      TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
