@@ -450,8 +450,8 @@ jobs:
                 "  git clone \"'"${REPO_URL}"'\" \"'"${BASTION_REPO_DIR}"'\"",
                 "  cd \"'"${BASTION_REPO_DIR}"'\"",
                 "fi",
-                "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
                 "git checkout '"${GITHUB_SHA}"'",
+                "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
                 "cd terraform/environments/'"${TARGET_ENV}"'/platform/addons",
                 "terraform init -input=false -reconfigure",
                 "terraform apply -input=false -auto-approve -var-file=terraform.tfvars"
