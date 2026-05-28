@@ -15,7 +15,8 @@ else
 fi
 
 # Update kubeconfig
-export KUBECONFIG=/tmp/kubeconfig
+mkdir -p /home/ssm-user/.kube
+export KUBECONFIG=/home/ssm-user/.kube/config
 aws eks update-kubeconfig --name payflow-eks-dev --region us-east-1
 
 # Verify CRDs are established
