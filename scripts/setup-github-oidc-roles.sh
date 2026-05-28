@@ -260,6 +260,13 @@ make_verify_policy() {
           ]
         }
       }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:ListCommandInvocations"
+      ],
+      "Resource": "*"
     }
   ]
 }
@@ -723,6 +730,13 @@ make_addons_apply_policy() {
           ]
         }
       }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:ListCommandInvocations"
+      ],
+      "Resource": "*"
     }
   ]
 }
