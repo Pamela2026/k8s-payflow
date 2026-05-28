@@ -16,5 +16,8 @@ fi
 
 # Update kubeconfig
 mkdir -p /home/ssm-user/.kube
+chmod 700 /home/ssm-user/.kube
 export KUBECONFIG=/home/ssm-user/.kube/config
-aws eks update-kubeconfig --name payflow-eks-dev --region us-east-1
+aws eks update-kubeconfig --name payflow-eks-dev --region us-east-1 --kubeconfig /home/ssm-user/.kube/config
+chown -R ssm-user:ssm-user /home/ssm-user/.kube
+chmod 600 /home/ssm-user/.kube/config
