@@ -32,7 +32,7 @@ resource "kubernetes_manifest" "gp2" {
         "storageclass.kubernetes.io/is-default-class" = "true"
       }
     }
-    provisioner          = "ebs.csi.aws.com"
+    provisioner          = "://aws.com"
     volumeBindingMode    = "WaitForFirstConsumer"
     allowVolumeExpansion = true
     parameters = {
@@ -40,10 +40,10 @@ resource "kubernetes_manifest" "gp2" {
       encrypted = "true"
     }
   }
-   # Configures the plugin to overwrite pre-existing fields during a fresh apply
+
+  # Force Terraform to overwrite the fields managed by the EKS default installer
   field_manager {
     force_conflicts = true
-    name            = "terraform"
   }
 }
 
