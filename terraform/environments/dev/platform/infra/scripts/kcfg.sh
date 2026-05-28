@@ -4,11 +4,10 @@ set -e
 REPO_DIR="/home/ssm-user/k8s-payflow"
 REPO_URL="https://github.com/Pamela2026/k8s-payflow.git"
 
-# Clone or pull repository
+# Clone repository if needed, otherwise reuse the existing checkout.
 if [ -d "$REPO_DIR" ]; then
-    echo "Repository already exists, pulling latest..."
+    echo "Repository already exists, reusing checkout..."
     cd "$REPO_DIR"
-    git pull
 else
     echo "Cloning repository..."
     git clone "$REPO_URL" "$REPO_DIR"
