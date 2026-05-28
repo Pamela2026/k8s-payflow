@@ -22,19 +22,23 @@ provider "helm" {
 }
 
 ## Default gp2 StorageClass for EBS CSI driver. ##
-resource "kubernetes_storage_class" "gp2" {
-  metadata {
-    name = "gp2"
-    annotations = {
-      "storageclass.kubernetes.io/is-default-class" = "true"
+resource "kubernetes_manifest" "gp2" {
+  manifest = {
+    apiVersion = "storage.k8s.io/v1"
+    kind       = "StorageClass"
+    metadata = {
+      name = "gp2"
+      annotations = {
+        "storageclass.kubernetes.io/is-default-class" = "true"
+      }
     }
-  }
-  storage_provisioner    = "ebs.csi.aws.com"
-  volume_binding_mode    = "WaitForFirstConsumer"
-  allow_volume_expansion = true
-  parameters = {
-    type      = "gp2"
-    encrypted = "true"
+    provisioner        = "ebs.csi.aws.com"
+    volumeBindingMode  = "WaitForFirstConsumer"
+    allowVolumeExpansion = true
+    parameters = {
+      type      = "gp2"
+      encrypted = "true"
+    }
   }
 }
 
