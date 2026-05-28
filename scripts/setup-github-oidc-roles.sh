@@ -717,6 +717,25 @@ make_addons_apply_policy() {
         "eks:UntagResource"
       ],
       "Resource": "arn:aws:eks:${REGION}:${ACCOUNT_ID}:cluster/payflow-eks-${env_name}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:SendCommand",
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations"
+      ],
+      "Resource": [
+        "arn:aws:ec2:${REGION}:${ACCOUNT_ID}:instance/*",
+        "arn:aws:ssm:${REGION}::document/AWS-RunShellScript"
+      ],
+      "Condition": {
+        "StringLike": {
+          "ssm:resourceTag/Name": [
+            "*-bastion"
+          ]
+        }
+      }
     }
   ]
 }

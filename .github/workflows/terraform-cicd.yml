@@ -356,7 +356,7 @@ jobs:
 
     needs: plan_platform
 
-    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-apply
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-addons-apply
 
     env:
       TF_VAR_rds_password: ${{ secrets.TF_VAR_RDS_PASSWORD }}
