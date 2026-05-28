@@ -650,7 +650,8 @@ make_platform_apply_policy() {
         "secretsmanager:ListTagsForResource",
         "secretsmanager:DescribeSecret",
         "secretsmanager:ListSecrets",
-        "secretsmanager:GetResourcePolicy"
+        "secretsmanager:GetResourcePolicy",
+        "secretsmanager:GetSecretValue"
       ],
       "Resource": "*"
     },
