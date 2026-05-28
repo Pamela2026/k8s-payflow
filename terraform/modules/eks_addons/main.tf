@@ -40,6 +40,11 @@ resource "kubernetes_manifest" "gp2" {
       encrypted = "true"
     }
   }
+   # Configures the plugin to overwrite pre-existing fields during a fresh apply
+  field_manager {
+    force_conflicts = true
+    name            = "terraform"
+  }
 }
 
 ## AWS Load Balancer Controller (Helm). ##
