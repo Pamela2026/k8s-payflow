@@ -356,7 +356,7 @@ jobs:
 
     needs: plan_platform
 
-    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-addons-apply
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-apply
 
     env:
       TF_VAR_rds_password: ${{ secrets.TF_VAR_RDS_PASSWORD }}
@@ -414,7 +414,7 @@ jobs:
       - apply_platform
       - discover_bastion
 
-    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-platform-apply
+    environment: ${{ inputs.env || github.event.inputs.env || 'dev' }}-addons-apply
 
     steps:
       - name: Configure AWS
