@@ -519,20 +519,28 @@ jobs:
           TARGET_ENV: ${{ inputs.env || github.event.inputs.env || 'dev' }}
           GITHUB_SHA: ${{ github.sha }}
           BASTION_INSTANCE_ID: ${{ needs.discover_bastion.outputs.bastion_instance_id }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
           set -euo pipefail
+
+          REPO_URL="${REPO_URL:-https://github.com/${{ github.repository }}.git}"
 
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${BASTION_INSTANCE_ID}" \
             --document-name "AWS-RunShellScript" \
             --parameters commands='[
-              "set -euo pipefail",
-              "cd /home/ssm-user/k8s-payflow",
-              "git fetch --all --tags",
-              "git checkout '"${GITHUB_SHA}"'",
-              "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
-              "kubectl wait --for=condition=Ready nodes --all --timeout=5m"
-            ]' \
+                "set -euo pipefail",
+                "if [ -d /home/ssm-user/k8s-payflow/.git ]; then",
+                "  cd /home/ssm-user/k8s-payflow",
+                "  git fetch --all --tags",
+                "else",
+                "  git clone \"'"${REPO_URL}"'\" /home/ssm-user/k8s-payflow",
+                "  cd /home/ssm-user/k8s-payflow",
+                "fi",
+                "git checkout '"${GITHUB_SHA}"'",
+                "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
+                "kubectl wait --for=condition=Ready nodes --all --timeout=5m"
+              ]' \
             --query "Command.CommandId" \
             --output text)
 
@@ -555,18 +563,26 @@ jobs:
           ARGOCD_VERSION: "v2.14.9"
           GITHUB_SHA: ${{ github.sha }}
           BASTION_INSTANCE_ID: ${{ needs.discover_bastion.outputs.bastion_instance_id }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
           set -euo pipefail
+
+          REPO_URL="${REPO_URL:-https://github.com/${{ github.repository }}.git}"
 
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${BASTION_INSTANCE_ID}" \
             --document-name "AWS-RunShellScript" \
             --parameters commands='[
-              "set -euo pipefail",
-              "cd /home/ssm-user/k8s-payflow",
-              "git checkout '"${GITHUB_SHA}"'",
+                "set -euo pipefail",
+                "if [ -d /home/ssm-user/k8s-payflow/.git ]; then",
+                "  cd /home/ssm-user/k8s-payflow",
+                "else",
+                "  git clone \"'"${REPO_URL}"'\" /home/ssm-user/k8s-payflow",
+                "  cd /home/ssm-user/k8s-payflow",
+                "fi",
+                "git checkout '"${GITHUB_SHA}"'",
 
-              "kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -",
+                "kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -",
 
               "kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/'"${ARGOCD_VERSION}"'/manifests/install.yaml",
 
