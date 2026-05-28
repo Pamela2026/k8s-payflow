@@ -208,6 +208,9 @@ jobs:
     needs: build_and_push
     environment: build
 
+    env:
+      WORKFLOW_PUSH_TOKEN: ${{ secrets.WORKFLOW_PUSH_TOKEN }}
+
     permissions:
       contents: write
       pull-requests: write
@@ -223,6 +226,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+          persist-credentials: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722  # v4.1.0
@@ -273,6 +277,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          if [ -n "${WORKFLOW_PUSH_TOKEN:-}" ]; then
+            git remote set-url origin "https://x-access-token:${WORKFLOW_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
 
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           ECR_PREFIX="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
@@ -328,7 +336,7 @@ jobs:
 
       - name: Create pull request
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_PUSH_TOKEN != '' && secrets.WORKFLOW_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
           SHA_TAG: ${{ github.sha }}
           TARGET_ENV: ${{ steps.env.outputs.target_env }}
         shell: bash

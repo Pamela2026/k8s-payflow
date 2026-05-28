@@ -130,7 +130,7 @@ The images are tagged with the full commit SHA. That gives you a clean trace fro
 
 The overlay sync currently targets `dev` on `test` pushes and `prod` on `main` pushes. You can also choose the target overlay manually when running `build.yml` via `workflow_dispatch`. The workflow now opens a PR instead of pushing directly to the branch, which plays nicer with branch protection.
 
-For `build.yml`, create a GitHub Environment named `build` and store the ECR push role in `AWS_ROLE_TO_ASSUME` there. That keeps the image publishing permissions separate from the environment-specific Terraform layers.
+For `build.yml`, create a GitHub Environment named `build` and store the ECR push role in `AWS_ROLE_TO_ASSUME` there. If you want the overlay sync PR branch to push through GitHub's workflow-file restrictions cleanly, also add a `WORKFLOW_PUSH_TOKEN` secret with workflow-write permission. That keeps the image publishing permissions separate from the environment-specific Terraform layers.
 
 ## Local Secret Scanning Hooks
 
