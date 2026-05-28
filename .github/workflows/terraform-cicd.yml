@@ -539,6 +539,9 @@ jobs:
                 "fi",
                 "git checkout '"${GITHUB_SHA}"'",
                 "bash terraform/environments/'"${TARGET_ENV}"'/platform/infra/scripts/kcfg.sh",
+                "kubectl wait --for=condition=Established crd/externalsecrets.external-secrets.io --timeout=5m",
+                "kubectl wait --for=condition=Established crd/clustersecretstores.external-secrets.io --timeout=5m",
+                "kubectl api-resources --api-group=external-secrets.io",
                 "kubectl wait --for=condition=Ready nodes --all --timeout=5m"
               ]' \
             --query "Command.CommandId" \

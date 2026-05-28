@@ -18,10 +18,3 @@ fi
 mkdir -p /home/ssm-user/.kube
 export KUBECONFIG=/home/ssm-user/.kube/config
 aws eks update-kubeconfig --name payflow-eks-dev --region us-east-1
-
-# Verify CRDs are established
-kubectl wait --for=condition=Established crd/externalsecrets.external-secrets.io --timeout=120s
-kubectl wait --for=condition=Established crd/clustersecretstores.external-secrets.io --timeout=120s
-
-# Verify API resources are visible
-kubectl api-resources --api-group=external-secrets.io
