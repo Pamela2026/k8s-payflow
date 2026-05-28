@@ -278,9 +278,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -n "${WORKFLOW_PUSH_TOKEN:-}" ]; then
-            git remote set-url origin "https://x-access-token:${WORKFLOW_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if [ -z "${WORKFLOW_PUSH_TOKEN:-}" ]; then
+            echo "WORKFLOW_PUSH_TOKEN is required in the build environment to push the GitOps sync branch."
+            echo "Set a token with contents:write and workflows:write on this repo, then rerun the workflow."
+            exit 1
           fi
+
+          git remote set-url origin "https://x-access-token:${WORKFLOW_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           ECR_PREFIX="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
