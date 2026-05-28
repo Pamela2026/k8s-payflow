@@ -334,6 +334,20 @@ resource "aws_route_table_association" "spoke_data_private_az" {
   route_table_id = aws_route_table.spoke_private_az[each.key].id
 }
 
+## Multi-AZ spoke private route to hub via TGW. ##
+## Depends on: aws_route_table.spoke_private_az and aws_ec2_transit_gateway.core. ##
+resource "aws_route" "spoke_private_to_hub_az" {
+  for_each               = var.enable_tgw && var.enable_multi_az_spoke_nat_gateway ? local.spoke_private_subnets : {}
+  route_table_id         = aws_route_table.spoke_private_az[each.key].id
+  destination_cidr_block = var.hub_vpc_cidr
+  transit_gateway_id     = aws_ec2_transit_gateway.core[0].id
+
+  depends_on = [
+    aws_ec2_transit_gateway_vpc_attachment.hub,
+    aws_ec2_transit_gateway_vpc_attachment.spoke
+  ]
+}
+
 ## Transit Gateway for hub and spoke routing. ##
 ## Depends on: none. ##
 resource "aws_ec2_transit_gateway" "core" {
