@@ -706,10 +706,16 @@ make_addons_apply_policy() {
         "ssm:GetCommandInvocation",
         "ssm:ListCommandInvocations"
       ],
-      "Resource": [
-        "arn:aws:ec2:${REGION}:${ACCOUNT_ID}:instance/*",
-        "arn:aws:ssm:${REGION}::document/AWS-RunShellScript"
+      "Resource": "arn:aws:ssm:${REGION}::document/AWS-RunShellScript"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:SendCommand",
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations"
       ],
+      "Resource": "arn:aws:ec2:${REGION}:${ACCOUNT_ID}:instance/*",
       "Condition": {
         "StringLike": {
           "ssm:resourceTag/Name": [
