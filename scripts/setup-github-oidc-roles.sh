@@ -476,6 +476,25 @@ make_foundation_apply_policy() {
         "ec2:ModifyInstancePlacement"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:SendCommand",
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations"
+      ],
+      "Resource": [
+        "arn:aws:ec2:${REGION}:${ACCOUNT_ID}:instance/*",
+        "arn:aws:ssm:${REGION}::document/AWS-RunShellScript"
+      ],
+      "Condition": {
+        "StringLike": {
+          "ssm:resourceTag/Name": [
+            "*-bastion"
+          ]
+        }
+      }
     }
   ]
 }
