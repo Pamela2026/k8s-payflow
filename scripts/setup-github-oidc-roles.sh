@@ -498,6 +498,7 @@ make_platform_apply_policy() {
         "eks:CreateNodegroup",
         "eks:DeleteNodegroup",
         "eks:UpdateNodegroupConfig",
+        "eks:UpdateNodegroupVersion",
         "eks:CreateAccessEntry",
         "eks:DeleteAccessEntry",
         "eks:AssociateAccessPolicy",
@@ -604,6 +605,8 @@ make_platform_apply_policy() {
         "rds:DeleteDBSubnetGroup",
         "rds:CreateDBParameterGroup",
         "rds:DeleteDBParameterGroup",
+        "rds:ModifyDBParameterGroup",
+        "rds:DescribeDBParameterGroups",
         "rds:AddTagsToResource",
         "rds:ListTagsForResource",
         "rds:Describe*"
