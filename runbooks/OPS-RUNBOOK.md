@@ -170,6 +170,34 @@ kubectl describe node <node-name>
 kubectl get events --field-selector involvedObject.name=<node-name>
 ```
 
+### Bastion Cannot Reach Private EKS API
+
+Symptom:
+
+```text
+Unable to connect to the server: dial tcp 10.1.120.66:443: i/o timeout
+```
+
+What we checked:
+
+- The EKS control plane security group allowed TCP 443 from the bastion VPC CIDR.
+- The bastion subnet route table already had a TGW route to the spoke VPC CIDR.
+- The bastion subnet NACL was open in both directions.
+- The private EKS API ENIs were in spoke data-private subnets.
+- Those spoke subnet route tables had `local` and `nat` routes, but no TGW return route back to the hub VPC.
+
+Root cause:
+
+- The spoke data-private route tables were missing a return route to `10.0.0.0/16` via the Transit Gateway.
+
+Fix:
+
+- Add a TGW return route for the multi-AZ spoke private route tables in `terraform/modules/vpc/main.tf`.
+
+Reference:
+
+- [Incident 2026-05-28 - Private EKS API Reachability Failure](incident-2026-05-28-private-eks-reachability.md)
+
 ### Edge Routing or TLS Issues
 
 ```bash
