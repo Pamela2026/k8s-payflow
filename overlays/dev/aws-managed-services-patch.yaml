@@ -99,7 +99,10 @@ spec:
               name: payflow-secrets
               key: RABBITMQ_ENDPOINT
         - name: RABBITMQ_URL
-          value: "amqps://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@$(RABBITMQ_ENDPOINT):5671"
+          valueFrom:
+            secretKeyRef:
+              name: payflow-secrets
+              key: RABBITMQ_URL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -133,7 +136,10 @@ spec:
               name: payflow-secrets
               key: RABBITMQ_ENDPOINT
         - name: RABBITMQ_URL
-          value: "amqps://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@$(RABBITMQ_ENDPOINT):5671"
+          valueFrom:
+            secretKeyRef:
+              name: payflow-secrets
+              key: RABBITMQ_URL
 ---
 apiVersion: batch/v1
 kind: Job
