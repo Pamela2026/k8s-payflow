@@ -27,7 +27,7 @@ resource "kubernetes_manifest" "gp2" {
     }
   }
 
-  ?Force Terraform to overwrite the fields managed by the EKS default installer
+  # Force Terraform to overwrite the fields managed by the EKS default installer
   field_manager {
     force_conflicts = true
   }
