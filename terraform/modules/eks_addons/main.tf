@@ -220,7 +220,7 @@ resource "helm_release" "kubecost" {
 resource "kubectl_manifest" "aws_secretstore" {
   depends_on = [helm_release.external_secrets]
   yaml_body  = <<YAML
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: aws-secretsmanager
@@ -237,7 +237,7 @@ YAML
 resource "kubectl_manifest" "alertmanager_slack_secret" {
   depends_on = [kubectl_manifest.aws_secretstore]
   yaml_body  = <<YAML
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: alertmanager-slack-sync
