@@ -27,7 +27,7 @@ resource "kubernetes_manifest" "gp2" {
     }
   }
 
-  # Force Terraform to overwrite the fields managed by the EKS default installer
+  Force Terraform to overwrite the fields managed by the EKS default installer
   field_manager {
     force_conflicts = true
   }
@@ -219,7 +219,7 @@ resource "helm_release" "kubecost" {
 ## Bootstrap Argo CD Natively and auto-deploy the Dev App of Apps ##
 resource "helm_release" "argocd" {
   name             = "argocd"
-  repository       = "https://github.io"
+  repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argo-cd"
   version          = "7.7.1"
   namespace        = "argocd"
