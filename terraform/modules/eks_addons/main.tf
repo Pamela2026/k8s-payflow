@@ -18,7 +18,7 @@ resource "kubernetes_manifest" "gp2" {
         "storageclass.kubernetes.io/is-default-class" = "true"
       }
     }
-    provisioner          = "ebs.csi.aws.com"
+    provisioner          = "://aws.com"
     volumeBindingMode    = "WaitForFirstConsumer"
     allowVolumeExpansion = true
     parameters = {
@@ -37,7 +37,7 @@ resource "kubernetes_manifest" "gp2" {
 resource "helm_release" "alb_controller" {
   name       = "aws-load-balancer-controller"
   namespace  = "kube-system"
-  repository = "https://aws.github.io/eks-charts"
+  repository = "https://github.io"
   chart      = "aws-load-balancer-controller"
 
   set {
@@ -76,7 +76,7 @@ resource "helm_release" "external_secrets" {
   depends_on = [helm_release.alb_controller]
   name       = "external-secrets"
   namespace  = "external-secrets"
-  repository = "https://charts.external-secrets.io"
+  repository = "https://external-secrets.io"
   chart      = "external-secrets"
 
   create_namespace = true
@@ -101,7 +101,7 @@ resource "helm_release" "external_secrets" {
 resource "helm_release" "metrics_server" {
   name       = "metrics-server"
   namespace  = "kube-system"
-  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  repository = "https://github.io"
   chart      = "metrics-server"
 }
 
@@ -109,7 +109,7 @@ resource "helm_release" "metrics_server" {
 resource "helm_release" "cluster_autoscaler" {
   name       = "cluster-autoscaler"
   namespace  = "kube-system"
-  repository = "https://kubernetes.github.io/autoscaler"
+  repository = "https://github.io"
   chart      = "cluster-autoscaler"
 
   set {
@@ -141,10 +141,10 @@ resource "helm_release" "cluster_autoscaler" {
 ## Prometheus (Helm). ##
 resource "helm_release" "prometheus" {
   count            = var.enable_prometheus ? 1 : 0
-  depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2, kubectl_manifest.alertmanager_slack_secret]
+  depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "payflow-prometheus"
   namespace        = "monitoring"
-  repository       = "https://prometheus-community.github.io/helm-charts"
+  repository       = "https://github.io"
   chart            = "prometheus"
   create_namespace = true
   values           = var.prometheus_values_path != "" ? [file(var.prometheus_values_path)] : []
@@ -156,7 +156,7 @@ resource "helm_release" "grafana" {
   depends_on       = [helm_release.alb_controller]
   name             = "payflow-grafana"
   namespace        = "monitoring"
-  repository       = "https://grafana.github.io/helm-charts"
+  repository       = "https://github.io"
   chart            = "grafana"
   create_namespace = true
   values           = var.grafana_values_path != "" ? [file(var.grafana_values_path)] : []
@@ -168,7 +168,7 @@ resource "helm_release" "loki" {
   depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "payflow-loki"
   namespace        = "monitoring"
-  repository       = "https://grafana.github.io/helm-charts"
+  repository       = "https://github.io"
   chart            = "loki"
   create_namespace = true
   values           = var.loki_values_path != "" ? [file(var.loki_values_path)] : []
@@ -180,7 +180,7 @@ resource "helm_release" "promtail" {
   depends_on       = [helm_release.alb_controller]
   name             = "payflow-promtail"
   namespace        = "monitoring"
-  repository       = "https://grafana.github.io/helm-charts"
+  repository       = "https://github.io"
   chart            = "promtail"
   create_namespace = true
   values           = var.promtail_values_path != "" ? [file(var.promtail_values_path)] : []
@@ -192,7 +192,7 @@ resource "helm_release" "postgres_exporter" {
   depends_on       = [helm_release.alb_controller]
   name             = "payflow-postgres-exporter"
   namespace        = "monitoring"
-  repository       = "https://prometheus-community.github.io/helm-charts"
+  repository       = "https://github.io"
   chart            = "prometheus-postgres-exporter"
   create_namespace = true
   values           = var.postgres_exporter_values_path != "" ? [file(var.postgres_exporter_values_path)] : []
@@ -204,7 +204,7 @@ resource "helm_release" "kubecost" {
   depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "kubecost"
   namespace        = "kubecost"
-  repository       = "https://kubecost.github.io/cost-analyzer/"
+  repository       = "https://github.io"
   chart            = "cost-analyzer"
   version          = "2.8.3"
   create_namespace = true
@@ -221,7 +221,7 @@ resource "helm_release" "argocd" {
   name             = "argocd"
   repository       = "https://github.io"
   chart            = "argo-cd"
-  version          = "7.7.1" # Standard stable chart version mapping to ArgoCD v2.14+
+  version          = "7.7.1"
   namespace        = "argocd"
   create_namespace = true
 
@@ -252,12 +252,12 @@ resource "helm_release" "argocd" {
 
   set {
     name  = "additionalApplications.source.targetRevision"
-    value = "test" 
+    value = "test"
   }
 
   set {
     name  = "additionalApplications.source.path"
-    value = "k8s/argocd/apps" 
+    value = "k8s/argocd/apps"
   }
 
   set {
