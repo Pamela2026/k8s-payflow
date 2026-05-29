@@ -37,7 +37,7 @@ resource "kubernetes_manifest" "gp2" {
 resource "helm_release" "alb_controller" {
   name       = "aws-load-balancer-controller"
   namespace  = "kube-system"
-  repository = "https://github.io"
+  repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
 
   set {
@@ -76,7 +76,7 @@ resource "helm_release" "external_secrets" {
   depends_on = [helm_release.alb_controller]
   name       = "external-secrets"
   namespace  = "external-secrets"
-  repository = "https://external-secrets.io"
+  repository = "https://charts.external-secrets.io"
   chart      = "external-secrets"
 
   create_namespace = true
@@ -101,7 +101,7 @@ resource "helm_release" "external_secrets" {
 resource "helm_release" "metrics_server" {
   name       = "metrics-server"
   namespace  = "kube-system"
-  repository = "https://github.io"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
   chart      = "metrics-server"
 }
 
@@ -109,7 +109,7 @@ resource "helm_release" "metrics_server" {
 resource "helm_release" "cluster_autoscaler" {
   name       = "cluster-autoscaler"
   namespace  = "kube-system"
-  repository = "https://github.io"
+  repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
 
   set {
@@ -144,7 +144,7 @@ resource "helm_release" "prometheus" {
   depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "payflow-prometheus"
   namespace        = "monitoring"
-  repository       = "https://github.io"
+  repository       = "https://prometheus-community.github.io/helm-charts"
   chart            = "prometheus"
   create_namespace = true
   values           = var.prometheus_values_path != "" ? [file(var.prometheus_values_path)] : []
@@ -156,7 +156,7 @@ resource "helm_release" "grafana" {
   depends_on       = [helm_release.alb_controller]
   name             = "payflow-grafana"
   namespace        = "monitoring"
-  repository       = "https://github.io"
+  repository       = "https://grafana.github.io/helm-charts"
   chart            = "grafana"
   create_namespace = true
   values           = var.grafana_values_path != "" ? [file(var.grafana_values_path)] : []
@@ -168,7 +168,7 @@ resource "helm_release" "loki" {
   depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "payflow-loki"
   namespace        = "monitoring"
-  repository       = "https://github.io"
+  repository       = "https://grafana.github.io/helm-charts"
   chart            = "loki"
   create_namespace = true
   values           = var.loki_values_path != "" ? [file(var.loki_values_path)] : []
@@ -180,7 +180,7 @@ resource "helm_release" "promtail" {
   depends_on       = [helm_release.alb_controller]
   name             = "payflow-promtail"
   namespace        = "monitoring"
-  repository       = "https://github.io"
+  repository       = "https://grafana.github.io/helm-charts"
   chart            = "promtail"
   create_namespace = true
   values           = var.promtail_values_path != "" ? [file(var.promtail_values_path)] : []
@@ -192,7 +192,7 @@ resource "helm_release" "postgres_exporter" {
   depends_on       = [helm_release.alb_controller]
   name             = "payflow-postgres-exporter"
   namespace        = "monitoring"
-  repository       = "https://github.io"
+  repository       = "https://prometheus-community.github.io/helm-charts"
   chart            = "prometheus-postgres-exporter"
   create_namespace = true
   values           = var.postgres_exporter_values_path != "" ? [file(var.postgres_exporter_values_path)] : []
@@ -204,7 +204,7 @@ resource "helm_release" "kubecost" {
   depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2]
   name             = "kubecost"
   namespace        = "kubecost"
-  repository       = "https://github.io"
+  repository       = "https://kubecost.github.io/cost-analyzer/"
   chart            = "cost-analyzer"
   version          = "2.8.3"
   create_namespace = true
