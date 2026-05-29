@@ -210,7 +210,8 @@ make_readonly_policy() {
         "autoscaling:Describe*",
         "budgets:Describe*",
         "budgets:List*",
-        "budgets:View*"
+        "budgets:View*",
+        "ssm:SendCommand"
       ],
       "Resource": "*"
     }
