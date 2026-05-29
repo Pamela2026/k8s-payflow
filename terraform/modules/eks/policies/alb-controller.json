@@ -27,6 +27,7 @@
         "elasticloadbalancing:DescribeListenerAttributes",
         "elasticloadbalancing:DescribeSSLPolicies",
         "elasticloadbalancing:DescribeRules",
+        "elasticloadbalancing:ModifyRule",
         "elasticloadbalancing:DescribeTargetGroups",
         "elasticloadbalancing:DescribeTargetGroupAttributes",
         "elasticloadbalancing:DescribeTargetHealth",
