@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = ">= 1.14.0"
-    }
-  }
-}
-
 ## EKS cluster data (for kubeconfig proxying lookup context). ##
 data "aws_eks_cluster" "this" {
   name = var.cluster_name
