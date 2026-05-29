@@ -155,7 +155,7 @@ resource "helm_release" "cluster_autoscaler" {
 ## Prometheus (Helm). ##
 resource "helm_release" "prometheus" {
   count            = var.enable_prometheus ? 1 : 0
-  depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2, kubernetes_manifest.alertmanager_slack_secret]
+  depends_on       = [helm_release.alb_controller, kubernetes_manifest.gp2, kubectl_manifest.alertmanager_slack_secret]
   name             = "payflow-prometheus"
   namespace        = "monitoring"
   repository       = "https://prometheus-community.github.io/helm-charts"
@@ -231,55 +231,43 @@ resource "helm_release" "kubecost" {
 }
 
 ## AWS SecretStore for External Secrets ##
-resource "kubernetes_manifest" "aws_secretstore" {
+resource "kubectl_manifest" "aws_secretstore" {
   depends_on = [helm_release.external_secrets]
-  manifest = {
-    apiVersion = "external-secrets.io/v1beta1"
-    kind       = "SecretStore"
-    metadata = {
-      name      = "aws-secretsmanager"
-      namespace = "monitoring"
-    }
-    spec = {
-      provider = {
-        aws = {
-          service = "SecretsManager"
-          region  = "us-east-1"
-        }
-      }
-    }
-  }
+  yaml_body  = <<YAML
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: aws-secretsmanager
+  namespace: monitoring
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-east-1
+YAML
 }
 
 ## Sync definition for Alertmanager Slack secret ##
-resource "kubernetes_manifest" "alertmanager_slack_secret" {
-  depends_on = [kubernetes_manifest.aws_secretstore]
-  manifest = {
-    apiVersion = "external-secrets.io/v1beta1"
-    kind       = "ExternalSecret"
-    metadata = {
-      name      = "alertmanager-slack-sync"
-      namespace = "monitoring"
-    }
-    spec = {
-      refreshInterval = "1h"
-      secretStoreRef = {
-        name = "aws-secretsmanager"
-        kind = "SecretStore"
-      }
-      target = {
-        name           = "alertmanager-slack"
-        creationPolicy = "Owner"
-      }
-      data = [
-        {
-          secretKey = "api-url"
-          remoteRef = {
-            key      = "dev/monitoring/alertmanager-slack"
-            property = "api-url"
-          }
-        }
-      ]
-    }
-  }
+resource "kubectl_manifest" "alertmanager_slack_secret" {
+  depends_on = [kubectl_manifest.aws_secretstore]
+  yaml_body  = <<YAML
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: alertmanager-slack-sync
+  namespace: monitoring
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secretsmanager
+    kind: SecretStore
+  target:
+    name: alertmanager-slack
+    creationPolicy: Owner
+  data:
+    - secretKey: api-url
+      remoteRef:
+        key: dev/monitoring/alertmanager-slack
+        property: api-url
+YAML
 }
