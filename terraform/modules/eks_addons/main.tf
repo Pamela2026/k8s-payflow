@@ -216,44 +216,67 @@ resource "helm_release" "kubecost" {
   }
 }
 
-## AWS SecretStore for External Secrets ##
-resource "kubectl_manifest" "aws_secretstore" {
-  depends_on = [helm_release.external_secrets]
-  yaml_body  = <<YAML
-apiVersion: external-secrets.io/v1
-kind: SecretStore
-metadata:
-  name: aws-secretsmanager
-  namespace: monitoring
-spec:
-  provider:
-    aws:
-      service: SecretsManager
-      region: us-east-1
-YAML
-}
+## Bootstrap Argo CD Natively and auto-deploy the Dev App of Apps ##
+resource "helm_release" "argocd" {
+  name             = "argocd"
+  repository       = "https://github.io"
+  chart            = "argo-cd"
+  version          = "7.7.1" # Standard stable chart version mapping to ArgoCD v2.14+
+  namespace        = "argocd"
+  create_namespace = true
 
-## Sync definition for Alertmanager Slack secret ##
-resource "kubectl_manifest" "alertmanager_slack_secret" {
-  depends_on = [kubectl_manifest.aws_secretstore]
-  yaml_body  = <<YAML
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata:
-  name: alertmanager-slack-sync
-  namespace: monitoring
-spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: aws-secretsmanager
-    kind: SecretStore
-  target:
-    name: alertmanager-slack
-    creationPolicy: Owner
-  data:
-    - secretKey: api-url
-      remoteRef:
-        key: dev/monitoring/alertmanager-slack
-        property: api-url
-YAML
+  set {
+    name  = "server.service.type"
+    value = "ClusterIP"
+  }
+
+  set {
+    name  = "additionalApplications.name"
+    value = "payflow-app-of-apps"
+  }
+
+  set {
+    name  = "additionalApplications.namespace"
+    value = "argocd"
+  }
+
+  set {
+    name  = "additionalApplications.project"
+    value = "default"
+  }
+
+  set {
+    name  = "additionalApplications.source.repoURL"
+    value = "https://github.com"
+  }
+
+  set {
+    name  = "additionalApplications.source.targetRevision"
+    value = "test" 
+  }
+
+  set {
+    name  = "additionalApplications.source.path"
+    value = "k8s/argocd/apps" 
+  }
+
+  set {
+    name  = "additionalApplications.destination.server"
+    value = "https://default.svc"
+  }
+
+  set {
+    name  = "additionalApplications.destination.namespace"
+    value = "argocd"
+  }
+
+  set {
+    name  = "additionalApplications.syncPolicy.automated.prune"
+    value = "true"
+  }
+
+  set {
+    name  = "additionalApplications.syncPolicy.automated.selfHeal"
+    value = "true"
+  }
 }
