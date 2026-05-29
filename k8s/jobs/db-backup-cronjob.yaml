@@ -30,21 +30,20 @@ spec:
           - name: db-backup
             image: postgres:15
             env:
-            # #### Read database connection settings from ConfigMap and Secret ####
             - name: DB_HOST
               valueFrom:
-                configMapKeyRef:
-                  name: payflow-config
+                secretKeyRef:
+                  name: payflow-secrets
                   key: DB_HOST
             - name: DB_PORT
               valueFrom:
-                configMapKeyRef:
-                  name: payflow-config
+                secretKeyRef:
+                  name: payflow-secrets
                   key: DB_PORT
             - name: DB_NAME
               valueFrom:
-                configMapKeyRef:
-                  name: payflow-config
+                secretKeyRef:
+                  name: payflow-secrets
                   key: DB_NAME
             - name: DB_USER
               valueFrom:

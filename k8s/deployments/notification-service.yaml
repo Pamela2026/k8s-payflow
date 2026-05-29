@@ -32,24 +32,20 @@ spec:
         ports:
         - containerPort: 3003
         env:
-        - name: PORT
-          value: "3003"
-
-        # #### Postgres connection inputs ####
         - name: DB_HOST
           valueFrom:
-            configMapKeyRef:
-              name: payflow-config
+            secretKeyRef:
+              name: payflow-secrets
               key: DB_HOST
         - name: DB_PORT
           valueFrom:
-            configMapKeyRef:
-              name: payflow-config
+            secretKeyRef:
+              name: payflow-secrets
               key: DB_PORT
         - name: DB_NAME
           valueFrom:
-            configMapKeyRef:
-              name: payflow-config
+            secretKeyRef:
+              name: payflow-secrets
               key: DB_NAME
         - name: DB_USER
           valueFrom:
@@ -61,20 +57,11 @@ spec:
             secretKeyRef:
               name: payflow-secrets
               key: DB_PASSWORD
-
-        # #### RabbitMQ connection URL (client-side) ####
-        - name: RABBITMQ_USER
-          valueFrom:
-            secretKeyRef:
-              name: payflow-secrets
-              key: RABBITMQ_DEFAULT_USER
-        - name: RABBITMQ_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: payflow-secrets
-              key: RABBITMQ_DEFAULT_PASS
         - name: RABBITMQ_URL
-          value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@rabbitmq-service:5672"
+          valueFrom:
+            secretKeyRef:
+              name: payflow-secrets
+              key: RABBITMQ_URL
 
         # #### App settings ####
         - name: NODE_ENV

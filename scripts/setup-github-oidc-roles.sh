@@ -211,7 +211,8 @@ make_readonly_policy() {
         "budgets:Describe*",
         "budgets:List*",
         "budgets:View*",
-        "ssm:SendCommand"
+        "ssm:SendCommand",
+        "ssm:GetCommandInvocation"
       ],
       "Resource": "*"
     }

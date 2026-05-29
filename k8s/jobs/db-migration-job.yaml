@@ -22,25 +22,25 @@ spec:
       containers:
       - name: db-migration
         image: flyway/flyway:9.22.3
-        env:
         # #### Database connection inputs ####
+        env:
         - name: DB_HOST
           valueFrom:
-            configMapKeyRef:
-              name: payflow-config
+            secretKeyRef:
+              name: payflow-secrets
               key: DB_HOST
         - name: DB_PORT
           valueFrom:
-            configMapKeyRef:
-              name: payflow-config
+            secretKeyRef:
+              name: payflow-secrets
               key: DB_PORT
         - name: DB_NAME
           valueFrom:
-            configMapKeyRef:
-              name: payflow-config
+            secretKeyRef:
+              name: payflow-secrets
               key: DB_NAME
         - name: DB_USER
-          valueFrom:
+          valuesFrom:
             secretKeyRef:
               name: payflow-secrets
               key: DB_USER
@@ -49,6 +49,7 @@ spec:
             secretKeyRef:
               name: payflow-secrets
               key: DB_PASSWORD
+        # #### Flyway configuration ####
         - name: FLYWAY_LOCATIONS
           value: "filesystem:/migrations"
         - name: FLYWAY_BASELINE_ON_MIGRATE

@@ -27,7 +27,6 @@ images:
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-wallet-service
     newTag: f74623fb13d489dda5f74ab2722bc325da1187d9
 patches:
-  - path: aws-managed-services-patch.yaml
   - path: patch-configmap.yaml
   - path: patch-namespace-label.yaml
   - path: patch-frontend-service.yaml
