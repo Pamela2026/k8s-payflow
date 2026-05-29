@@ -11,18 +11,23 @@ images:
   - name: pamela001/payflow-wallet-api-gateway
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-api-gateway
     newTag: f74623fb13d489dda5f74ab2722bc325da1187d9
+
   - name: pamela001/payflow-wallet-auth-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-auth-service
     newTag: f74623fb13d489dda5f74ab2722bc325da1187d9
+
   - name: pamela001/payflow-wallet-frontend
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-frontend
     newTag: f74623fb13d489dda5f74ab2722bc325da1187d9
+
   - name: pamela001/payflow-wallet-notification-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-notification-service
     newTag: f74623fb13d489dda5f74ab2722bc325da1187d9
+
   - name: pamela001/payflow-wallet-transaction-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-transaction-service
     newTag: f74623fb13d489dda5f74ab2722bc325da1187d9
+
   - name: pamela001/payflow-wallet-wallet-service
     newName: 725094769583.dkr.ecr.us-east-1.amazonaws.com/payflow-wallet-wallet-service
     newTag: f74623fb13d489dda5f74ab2722bc325da1187d9
