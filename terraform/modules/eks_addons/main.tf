@@ -268,14 +268,14 @@ resource "kubernetes_manifest" "alertmanager_slack_secret" {
         kind = "SecretStore"
       }
       target = {
-        name = "alertmanager-slack" 
+        name           = "alertmanager-slack"
         creationPolicy = "Owner"
       }
       data = [
         {
           secretKey = "api-url"
           remoteRef = {
-            key      = "dev/monitoring/alertmanager-slack" # Matches AWS Secrets Manager Name
+            key      = "dev/monitoring/alertmanager-slack"
             property = "api-url"
           }
         }
