@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: pushgateway-metrics
+  name: pushgateway-metrics-v2 # <-- Changed the suffix name so it applies on top of the old failed job cleanly
   namespace: payflow
 spec:
   backoffLimit: 1
@@ -24,7 +24,7 @@ spec:
             - -c
             - |
               set -eu
-              cat <<'EOF' | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/${JOB_NAME}/instance/${HOSTNAME}"
+              cat << EOF | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/${JOB_NAME}/instance/${HOSTNAME}"
               # TYPE payflow_job_last_success_timestamp_seconds gauge
               payflow_job_last_success_timestamp_seconds $(date +%s)
               # TYPE payflow_job_duration_seconds gauge
